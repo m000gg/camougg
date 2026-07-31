@@ -84,18 +84,20 @@ Most existing steganography tools are either outdated GUI applications, unmainta
 ```text
 camougg/
 ├─ src/
-│  ├─ core/                                 ← steganography engine (embed/extract, LSB logic)
-│  ├─ crypto/                               ← payload encryption/decryption (password-based)
-│  ├─ formats/                              ← per-container-format handling (PNG, JPEG)
-│  ├─ tui/                                  ← InquirerPy-based interactive interface
-│  └─ __main__.py                           ← CLI entry point
-├─ docs/                                    ← documentation, screenshots, 
+│  └─ camougg/
+│     ├─ core/                              ← steganography engine (embed/extract, LSB logic)
+│     ├─ crypto/                            ← payload encryption/decryption (password-based)
+│     ├─ formats/                           ← per-container-format handling (PNG, JPEG)
+│     ├─ tui/                               ← InquirerPy-based interactive interface
+│     ├─ __init__.py
+│     └─ __main__.py                        ← CLI entry point
+├─ docs/                                    ← documentation, screenshots
 │  ├─ features/                             ← features description & explanation
 │  ├─ logo.png                              ← project logo used in this README
 │  └─ screenshots/                          ← app screenshots used in this README
 ├─ tests/                                   ← unit tests
 ├─ pyproject.toml                           ← project metadata and dependencies
-└─ README.md                                ← project description and instructions
+└─ README.md                                ← project description and instructions 
 ```
 
 ---
