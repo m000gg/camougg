@@ -60,7 +60,7 @@ Most existing steganography tools are either outdated GUI applications, unmainta
 * **File embedding**: hide any file inside a PNG or JPEG image using LSB steganography.
 * **Lossless extraction**: recover the original file byte-for-byte from a carrier image.
 * **Password protection**: encrypt the payload before embedding it.
-* **Interactive TUI**: guided, keyboard-driven interface (built with InquirerPy) — no need to memorize flags.
+* **Interactive TUI**: guided, keyboard-driven interface (built with Textual) — no need to memorize flags.
 * **Local-first**: everything runs on your machine, nothing is uploaded anywhere.
 
 ---
@@ -88,7 +88,7 @@ camougg/
 │     ├─ core/                              ← steganography engine (embed/extract, LSB logic)
 │     ├─ crypto/                            ← payload encryption/decryption (password-based)
 │     ├─ formats/                           ← per-container-format handling (PNG, JPEG)
-│     ├─ tui/                               ← InquirerPy-based interactive interface
+│     ├─ tui/                               ← Textual-based interactive interface
 │     ├─ __init__.py
 │     └─ __main__.py                        ← CLI entry point
 ├─ docs/                                    ← documentation, screenshots
@@ -111,7 +111,7 @@ camougg is a single-package Python CLI/TUI application. The core steganography e
 | Category         | Technologies            |
 |------------------|-------------------------|
 | Language         | Python                  |
-| TUI              | InquirerPy              |
+| TUI              | Textual                 |
 | Image processing | Pillow (planned/likely) |
 | Packaging        | pip / PyPI (TBD)        |
 | Version Control  | Git, GitHub             |
@@ -146,7 +146,7 @@ cd camougg
 > Installation instructions will be finalized closer to the MVP release (planned via `pip`/PyPI).
 
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ### 4) How to Use
