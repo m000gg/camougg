@@ -7,11 +7,6 @@ Screen {
     color: $text;
 }
 
-
-/* ===========================
-   Header / Footer
-   =========================== */
-
 Header {
     background: $primary;
     color: $text;
@@ -24,11 +19,12 @@ Footer {
 
 
 /* ===========================
-   Main Container
+   Root layout
    =========================== */
 
-Vertical {
+#root {
     padding: 1 2;
+    align: center top;
 }
 
 
@@ -39,9 +35,7 @@ Vertical {
 #logo {
     width: 100%;
     text-align: left;
-
     color: $primary;
-
     margin-bottom: 1;
 }
 
@@ -53,126 +47,112 @@ Vertical {
 .section_title {
     color: $primary;
     text-style: bold;
-
-    margin-top: 1;
     margin-bottom: 1;
 }
 
 
 /* ===========================
-   RadioSet
+   Menu container
    =========================== */
 
-RadioSet {
+#menu_container {
+    width: 90;
+    max-width: 100%;
+    height: auto;
+
     border: round $primary;
+    border-title-color: $primary;
+    border-title-style: bold;
 
     background: $panel;
 
-    padding: 1 2;
+    padding: 1 3;
+}
 
+
+/* ===========================
+   Menu rows (button + description)
+   =========================== */
+
+.menu_row {
+    width: 100%;
+    height: 3;
     margin-bottom: 1;
 }
 
-
-/* Unselected */
-
-RadioButton {
-    color: $text;
+.menu_row:last-of-type {
+    margin-bottom: 0;
 }
 
 
-/* Selected */
+/* ===========================
+   Menu buttons
+   =========================== */
 
-RadioButton.-selected {
-    color: $primary;
+.menu_button {
+    width: 22;
+    height: 3;
+
+    content-align: left middle;
     text-style: bold;
-}
 
-
-/* Hover */
-
-RadioButton:hover {
     background: $boost;
+    border: round $primary-lighten-2;
 }
 
+.menu_button:hover {
+    background: $accent 20%;
+    text-style: bold reverse;
+}
 
-/* ===========================
-   RichLog
-   =========================== */
+.menu_button:focus {
+    border: round $accent;
+}
 
-RichLog {
+.menu_button.photo {
+    border: round $success;
+    color: $success;
+}
 
-    height: 1fr;
-
-    border: none;
-
-    background: transparent;
-
+.menu_button.photo:hover {
+    background: $success 25%;
     color: $text;
-
-    padding-top: 1;
 }
 
-
-/* ===========================
-   Input
-   =========================== */
-
-Input {
-
-    border: none;
-
-    background: transparent;
-
-    color: $primary;
-
-    margin-top: 1;
-}
-
-
-/* ===========================
-   Optional status blocks
-   =========================== */
-
-.info_box {
-
+.menu_button.video {
     border: round $primary;
+    color: $primary;
+}
 
-    background: $panel;
-
-    padding: 1 2;
-
+.menu_button.video:hover {
+    background: $primary 25%;
     color: $text;
+}
 
-    margin-bottom: 1;
+.menu_button.audio {
+    border: round $warning;
+    color: $warning;
+}
+
+.menu_button.audio:hover {
+    background: $warning 25%;
+    color: $text;
 }
 
 
 /* ===========================
-   Static widgets
+   Descriptions
    =========================== */
 
-Static {
+.menu_desc {
+    width: 1fr;
+    height: 3;
 
-    color: $text;
+    content-align: left middle;
+    padding-left: 2;
 
-}
-
-
-/* ===========================
-   Scrollbar
-   =========================== */
-
-ScrollBar {
-
-    background: $surface;
-
-}
-
-ScrollBar > .scrollbar--handle {
-
-    background: $primary;
-
+    color: $text-muted;
+    text-style: italic;
 }
 
 
@@ -181,18 +161,5 @@ ScrollBar > .scrollbar--handle {
    =========================== */
 
 *:focus {
-
     border: round $accent;
-
-}
-
-
-/* ===========================
-   Disabled
-   =========================== */
-
-*:disabled {
-
-    color: $text-disabled;
-
 }

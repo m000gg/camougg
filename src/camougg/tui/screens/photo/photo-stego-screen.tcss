@@ -1,17 +1,14 @@
 /* ===========================
    Screen
    =========================== */
-
 Screen {
     background: $surface;
     color: $text;
 }
 
-
 /* ===========================
    Header / Footer
    =========================== */
-
 Header {
     background: $primary;
     color: $text;
@@ -22,177 +19,172 @@ Footer {
     color: $text;
 }
 
-
 /* ===========================
    Main Container
    =========================== */
-
 Vertical {
     padding: 1 2;
 }
 
-
 /* ===========================
    Logo
    =========================== */
-
 #logo {
     width: 100%;
     text-align: left;
-
     color: $primary;
-
     margin-bottom: 1;
 }
-
 
 /* ===========================
    Section titles
    =========================== */
-
 .section_title {
     color: $primary;
     text-style: bold;
-
     margin-top: 1;
     margin-bottom: 1;
 }
 
-
 /* ===========================
    RadioSet
    =========================== */
-
 RadioSet {
     border: round $primary;
-
     background: $panel;
-
     padding: 1 2;
-
     margin-bottom: 1;
 }
 
-
 /* Unselected */
-
 RadioButton {
     color: $text;
 }
 
-
 /* Selected */
-
 RadioButton.-selected {
     color: $primary;
     text-style: bold;
 }
 
-
 /* Hover */
-
 RadioButton:hover {
     background: $boost;
 }
 
-
 /* ===========================
-   RichLog
+   RichLog (Терминал)
    =========================== */
-
 RichLog {
-
     height: 1fr;
-
     border: none;
-
     background: transparent;
-
     color: $text;
-
     padding-top: 1;
 }
 
-
 /* ===========================
-   Input
+   Input (Командная строка)
    =========================== */
-
 Input {
-
     border: none;
-
     background: transparent;
-
     color: $primary;
-
     margin-top: 1;
+    width: 100%;
 }
 
+/* Делаем так, чтобы командная строка выделялась, когда мы в ней пишем */
+#cli_input {
+    text-style: bold;
+}
+
+/* Убираем рамку фокуса конкретно для Input, чтобы он не "прыгал",
+   вместо этого подсвечиваем фон */
+Input:focus {
+    background: $boost;
+}
+
+/* ===========================
+   Buttons (Кнопки для других экранов)
+   =========================== */
+Button {
+    background: $primary;
+    color: $surface;
+    border: none;
+    margin-bottom: 1;
+}
+
+Button:hover {
+    background: $accent;
+    color: $text;
+}
+
+Button.-primary {
+    background: $accent;
+    text-style: bold;
+}
 
 /* ===========================
    Optional status blocks
    =========================== */
-
 .info_box {
-
     border: round $primary;
-
     background: $panel;
-
     padding: 1 2;
-
     color: $text;
-
     margin-bottom: 1;
 }
-
 
 /* ===========================
    Static widgets
    =========================== */
-
 Static {
-
     color: $text;
-
 }
-
 
 /* ===========================
    Scrollbar
    =========================== */
-
 ScrollBar {
-
     background: $surface;
-
 }
 
 ScrollBar > .scrollbar--handle {
-
     background: $primary;
-
+}
+ScrollBar > .scrollbar--handle:hover {
+    background: $accent;
 }
 
-
 /* ===========================
-   Focus
+   Focus & Disabled
    =========================== */
 
+/* Используем outline вместо border, чтобы интерфейс не дергался при кликах */
 *:focus {
-
-    border: round $accent;
-
+    outline: $accent;
 }
-
-
-/* ===========================
-   Disabled
-   =========================== */
 
 *:disabled {
-
     color: $text-disabled;
+    background: $surface;
+}
 
+/* ===========================
+   Notifications (Уведомления self.app.notify)
+   =========================== */
+Toast {
+    background: $panel;
+    color: $text;
+    border: round $primary;
+}
+
+Toast.-error {
+    border: round $error;
+    color: $error;
+}
+
+.hidden {
+    display: none;
 }

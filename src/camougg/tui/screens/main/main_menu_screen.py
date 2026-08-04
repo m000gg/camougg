@@ -1,9 +1,9 @@
+from textual import on
 from textual.binding import Binding
 from textual.screen import Screen
 from textual.app import ComposeResult
-from textual.widgets import Header, Footer, Input, RichLog, Static, RadioButton, RadioSet
-from textual.containers import Vertical
-from textual import on
+from textual.widgets import Header, Footer, RichLog, Static, Button
+from textual.containers import Vertical, Container, Horizontal
 
 SERIOUS_ASCII_LOGO = """
  ██████╗ █████╗ ███╗   ███╗ ██████╗ ██╗   ██╗ ██████╗  ██████╗
@@ -18,6 +18,7 @@ SERIOUS_ASCII_LOGO = """
  """
 WELCOME_MESSAGE = f"[green]{SERIOUS_ASCII_LOGO}[/]"
 
+
 class MainMenuScreen(Screen):
 
     CSS_PATH = "main-screen.tcss"
@@ -31,44 +32,48 @@ class MainMenuScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
 
-        yield Vertical(
-            Static(WELCOME_MESSAGE, id="logo"),
+        with Vertical(id="root"):
+            yield Static(WELCOME_MESSAGE, id="logo")
 
-            Static("Steganography", classes="section_title"),
+            with Container(id="menu_container"):
+                yield Static("Steganography", classes="section_title")
 
-            RadioSet(
-                RadioButton("Video"),
-                RadioButton("Photo"),
-                RadioButton("Audio"),
-                id="steg_type",
-            ),
+                with Horizontal(classes="menu_row"):
+                    yield Button("[$]  Photo", id="btn_photo", classes="menu_button photo")
+                    yield Static(
+                        "hide data inside images (png, bmp, ...)",
+                        classes="menu_desc",
+                    )
 
-            RichLog(
-                id="echo_log",
-                auto_scroll=True,
-                markup=True,
-            ),
+                with Horizontal(classes="menu_row"):
+                    yield Button("[>]  Video", id="btn_video", classes="menu_button video")
+                    yield Static(
+                        "hide data inside video frames",
+                        classes="menu_desc",
+                    )
 
-            Input(
-                placeholder="[Camougg] >",
-                id="message_input",
-            ),
-        )
+                with Horizontal(classes="menu_row"):
+                    yield Button("[~]  Audio", id="btn_audio", classes="menu_button audio")
+                    yield Static(
+                        "hide data inside audio waveforms",
+                        classes="menu_desc",
+                    )
 
         yield Footer()
 
-    @on(RadioSet.Changed, "#steg_type")
-    def handle_radio_choice(self, event: RadioSet.Changed):
+    def on_mount(self) -> None:
+        self.query_one("#menu_container", Container).border_title = "menu"
 
-        choice = str(event.pressed.label)
+    @on(Button.Pressed)
+    def handle_buttons(self, event: Button.Pressed) -> None:
+        button_id = event.button.id
 
-        if choice == "Photo":
+        if button_id == "btn_photo":
             self.app.push_screen("photo")
-        elif choice == "Video":
-            self.app.push_screen("video")
-        elif choice == "Audio":
-            self.app.push_screen("audio")
-
+        elif button_id == "btn_video":
+            self.app.push_screen("to_be_done")
+        elif button_id == "btn_audio":
+            self.app.push_screen("to_be_done")
 
     def action_quit(self) -> None:
         self.app.exit()

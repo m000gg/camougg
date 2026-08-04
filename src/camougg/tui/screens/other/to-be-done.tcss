@@ -1,0 +1,64 @@
+/* ===========================
+   Screen
+   =========================== */
+
+Screen {
+    background: $surface;
+    color: $text;
+}
+
+
+/* ===========================
+   Header / Footer
+   =========================== */
+
+Header {
+    background: $primary;
+    color: $text;
+}
+
+Footer {
+    background: $primary;
+    color: $text;
+}
+
+
+/* ===========================
+   Main Container
+   =========================== */
+
+Vertical {
+    padding: 1 2;
+}
+
+
+/* ===========================
+   Logo
+   =========================== */
+
+#logo {
+    width: 100%;
+    text-align: left;
+
+    color: $primary;
+
+    margin-bottom: 1;
+}
+
+/* ===========================
+   Optional status blocks
+   =========================== */
+
+.info_box {
+
+    border: round $primary;
+
+    background: $panel;
+
+    padding: 1 2;
+
+    color: $text;
+
+    margin-bottom: 1;
+}
+
