@@ -67,13 +67,10 @@ Most existing steganography tools are either outdated GUI applications, unmainta
 
 ## 📸 App Screenshots
 
-> Screenshots will be added here once the TUI is finalized.
 
-|                    Embed flow                    |                     Extract flow                     |
-|:------------------------------------------------:|:----------------------------------------------------:|
-| ![Embed screenshot](docs/screenshots/embed.png)  | ![Extract screenshot](docs/screenshots/extract.png)  |
-
-*(placeholders — replace with actual captures under `docs/screenshots/` once available)*
+|                                    Embed flow                                    |                                     Extract flow                                     |
+|:--------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|
+| <img src="docs/assets/screenshots/embed.svg" width="750" alt="Embed screenshot"> | <img src="docs/assets/screenshots/extract.svg" width="750" alt="Extract screenshot"> |
 
 ---
 
@@ -144,7 +141,6 @@ cd camougg
 
 ### 3) Installation
 
-> Installation instructions will be finalized closer to the MVP release (planned via `pip`/PyPI).
 
 ```bash
 pip install -e .
@@ -162,7 +158,6 @@ Launches the interactive TUI, where you can choose:
 - an optional password
 - the mode: embed or extract
 
-*(this section will be expanded with concrete commands and screenshots once the interface is finalized)*
 
 ---
 
