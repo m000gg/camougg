@@ -40,7 +40,7 @@
 
 ## Use Cases
 
-|                                   Private file sharing                                      |                          Plausible-looking storage                            |                 Personal experimentation                    |
+|                      Private file sharing                                                   |                Plausible-looking storage                                      |            Personal experimentation                         |
 |:-------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------:|:-----------------------------------------------------------:|
 | Send a hidden file inside a normal-looking photo, instead of an obviously encrypted archive | Store sensitive data inside a media file that doesn't look suspicious at rest | Learn and experiment with steganography techniques hands-on |
 
@@ -60,20 +60,17 @@ Most existing steganography tools are either outdated GUI applications, unmainta
 * **File embedding**: hide any file inside a PNG or JPEG image using LSB steganography.
 * **Lossless extraction**: recover the original file byte-for-byte from a carrier image.
 * **Password protection**: encrypt the payload before embedding it.
-* **Interactive TUI**: guided, keyboard-driven interface (built with InquirerPy) — no need to memorize flags.
+* **Interactive TUI**: guided, keyboard-driven interface (built with Textual) — no need to memorize flags.*
 * **Local-first**: everything runs on your machine, nothing is uploaded anywhere.
 
 ---
 
 ## 📸 App Screenshots
 
-> Screenshots will be added here once the TUI is finalized.
 
-|                    Embed flow                    |                     Extract flow                     |
-|:------------------------------------------------:|:----------------------------------------------------:|
-| ![Embed screenshot](docs/screenshots/embed.png)  | ![Extract screenshot](docs/screenshots/extract.png)  |
-
-*(placeholders — replace with actual captures under `docs/screenshots/` once available)*
+|                                    Embed flow                                    |                                     Extract flow                                     |
+|:--------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|
+| <img src="docs/assets/screenshots/embed.svg" width="850" alt="Embed screenshot"> | <img src="docs/assets/screenshots/extract.svg" width="850" alt="Extract screenshot"> |
 
 ---
 
@@ -84,18 +81,21 @@ Most existing steganography tools are either outdated GUI applications, unmainta
 ```text
 camougg/
 ├─ src/
-│  ├─ core/                                 ← steganography engine (embed/extract, LSB logic)
-│  ├─ crypto/                               ← payload encryption/decryption (password-based)
-│  ├─ formats/                              ← per-container-format handling (PNG, JPEG)
-│  ├─ tui/                                  ← InquirerPy-based interactive interface
-│  └─ __main__.py                           ← CLI entry point
-├─ docs/                                    ← documentation, screenshots, 
+│  └─ camougg/
+│     ├─ core/                              ← steganography engine (embed/extract, LSB logic)
+│     ├─ crypto/                            ← payload encryption/decryption (password-based)
+│     ├─ formats/                           ← per-container-format handling (PNG, JPEG)
+│     ├─ tui/                               ← Textual-based interactive interface
+│     ├─ __init__.py
+│     └─ __main__.py                        ← CLI entry point
+├─ docs/                                    ← documentation, screenshots
 │  ├─ features/                             ← features description & explanation
 │  ├─ logo.png                              ← project logo used in this README
 │  └─ screenshots/                          ← app screenshots used in this README
 ├─ tests/                                   ← unit tests
+├─ pytest.ini
 ├─ pyproject.toml                           ← project metadata and dependencies
-└─ README.md                                ← project description and instructions
+└─ README.md                                ← project description and instructions 
 ```
 
 ---
@@ -109,7 +109,7 @@ camougg is a single-package Python CLI/TUI application. The core steganography e
 | Category         | Technologies            |
 |------------------|-------------------------|
 | Language         | Python                  |
-| TUI              | InquirerPy              |
+| TUI              | Textual                 |
 | Image processing | Pillow (planned/likely) |
 | Packaging        | pip / PyPI (TBD)        |
 | Version Control  | Git, GitHub             |
@@ -141,10 +141,9 @@ cd camougg
 
 ### 3) Installation
 
-> Installation instructions will be finalized closer to the MVP release (planned via `pip`/PyPI).
 
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ### 4) How to Use
@@ -159,7 +158,6 @@ Launches the interactive TUI, where you can choose:
 - an optional password
 - the mode: embed or extract
 
-*(this section will be expanded with concrete commands and screenshots once the interface is finalized)*
 
 ---
 
