@@ -70,7 +70,7 @@ Most existing steganography tools are either outdated GUI applications, unmainta
 
 |                                    Embed flow                                    |                                     Extract flow                                     |
 |:--------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|
-| <img src="docs/assets/screenshots/embed.svg" width="750" alt="Embed screenshot"> | <img src="docs/assets/screenshots/extract.svg" width="750" alt="Extract screenshot"> |
+| <img src="docs/assets/screenshots/embed.svg" width="850" alt="Embed screenshot"> | <img src="docs/assets/screenshots/extract.svg" width="850" alt="Extract screenshot"> |
 
 ---
 
