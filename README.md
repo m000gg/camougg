@@ -40,7 +40,7 @@
 
 ## Use Cases
 
-|                                   Private file sharing                                      |                          Plausible-looking storage                            |                 Personal experimentation                    |
+|                      Private file sharing                                                   |                Plausible-looking storage                                      |            Personal experimentation                         |
 |:-------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------:|:-----------------------------------------------------------:|
 | Send a hidden file inside a normal-looking photo, instead of an obviously encrypted archive | Store sensitive data inside a media file that doesn't look suspicious at rest | Learn and experiment with steganography techniques hands-on |
 
@@ -96,6 +96,7 @@ camougg/
 │  ├─ logo.png                              ← project logo used in this README
 │  └─ screenshots/                          ← app screenshots used in this README
 ├─ tests/                                   ← unit tests
+├─ pytest.ini
 ├─ pyproject.toml                           ← project metadata and dependencies
 └─ README.md                                ← project description and instructions 
 ```

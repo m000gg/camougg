@@ -39,7 +39,7 @@ class ToBeDoneScreen(Screen):
                 Vertical(
                     Static("[bold yellow] WILL BE DONE IN THE FUTURE [/]", id="wip-title"),
                     Label("This feature is currently under development.", id="wip-subtitle"),
-                    Label("Press [bold cyan]M[/] to return to the main menu.", id="wip-hint"),
+                    Label("Press [bold cyan]M[/] to return to the main menu or [bold cyan]Q[/] to quit.", id="wip-hint"),
                     classes="wip-box"
                 )
             )

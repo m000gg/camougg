@@ -1,5 +1,5 @@
 import numpy as np
-from src.camougg.crypto.CSPRNGenerator import CSPRNGenerator
+from camougg.crypto.CSPRNGenerator import CSPRNGenerator
 from PIL import Image, UnidentifiedImageError
 
 class StegWriter:
