@@ -41,7 +41,7 @@ class MainMenuScreen(Screen):
                 with Horizontal(classes="menu_row"):
                     yield Button("[$]  Photo", id="btn_photo", classes="menu_button photo")
                     yield Static(
-                        "hide data inside images (png, bmp, ...)",
+                         "hide data inside images (png)",
                         classes="menu_desc",
                     )
 

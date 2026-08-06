@@ -1,7 +1,6 @@
 import pytest
 from PIL import Image
 from camougg.core.steg.steg_write import StegWriter
-from camougg.crypto.CSPRNGenerator import CSPRNGenerator
 
 
 class TestStegWriter:
@@ -30,5 +29,5 @@ class TestStegWriter:
     def test_embed_nonexistent_image(self, tmp_path):
         writer = StegWriter()
 
-        with pytest.raises(Exception):
-            writer.steg_write("/nonexistent/image.png", "pass", "secret", str(tmp_path / "out.png"))
+        with pytest.raises(FileNotFoundError):
+            writer.steg_write("nonexistent.png", "password123", "Hello", str(tmp_path / "output.png"))

@@ -60,7 +60,7 @@ Most existing steganography tools are either outdated GUI applications, unmainta
 * **File embedding**: hide any file inside a PNG or JPEG image using LSB steganography.
 * **Lossless extraction**: recover the original file byte-for-byte from a carrier image.
 * **Password protection**: encrypt the payload before embedding it.
-* **Interactive TUI**: guided, keyboard-driven interface (built with Textual) — no need to memorize flags.
+* **Interactive TUI**: guided, keyboard-driven interface (built with Textual) — no need to memorize flags.*
 * **Local-first**: everything runs on your machine, nothing is uploaded anywhere.
 
 ---

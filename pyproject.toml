@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "camougg"
 version = "0.1.0"
-description = "TUI tool for steganographically hiding and extracting files in multimedia containers (PNG, JPEG) with password-based encryption"
+ description = "TUI tool for steganographically hiding and extracting files in lossless image containers (PNG) with password-based protection"
 readme = "README.md"
 requires-python = ">=3.10"
 
