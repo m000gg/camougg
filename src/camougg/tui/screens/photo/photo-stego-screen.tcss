@@ -1,0 +1,372 @@
+/* ===========================
+   Screen
+   =========================== */
+Screen {
+    background: $surface;
+    color: $text;
+}
+
+/* ===========================
+   Header / Footer
+   =========================== */
+Header {
+    background: $primary;
+    color: $text;
+}
+
+Footer {
+    background: $primary;
+    color: $text;
+}
+
+/* ===========================
+   Main Container
+   =========================== */
+Vertical {
+    padding: 1 2;
+}
+
+/* ===========================
+   Logo
+   =========================== */
+#logo {
+    width: 100%;
+    text-align: left;
+    color: $primary;
+    margin-bottom: 1;
+}
+
+/* ===========================
+   Section titles
+   =========================== */
+.section_title {
+    color: $primary;
+    text-style: bold;
+    margin-top: 1;
+    margin-bottom: 1;
+}
+
+/* ===========================
+   RadioSet
+   =========================== */
+RadioSet {
+    border: round $primary;
+    background: $panel;
+    padding: 1 2;
+    margin-bottom: 1;
+}
+
+/* Unselected */
+RadioButton {
+    color: $text;
+}
+
+/* Selected */
+RadioButton.-selected {
+    color: $primary;
+    text-style: bold;
+}
+
+/* Hover */
+RadioButton:hover {
+    background: $boost;
+}
+
+/* ===========================
+   RichLog
+   =========================== */
+RichLog {
+    height: 1fr;
+    border: none;
+    background: transparent;
+    color: $text;
+    padding-top: 1;
+}
+
+/* ===========================
+   Input
+   =========================== */
+Input {
+    border: none;
+    background: transparent;
+    color: $primary;
+    margin-top: 1;
+    width: 100%;
+}
+
+
+#cli_input {
+    text-style: bold;
+}
+
+
+Input:focus {
+    background: $boost;
+}
+
+/* ===========================
+   Buttons
+   =========================== */
+Button {
+    background: $primary;
+    color: $surface;
+    border: none;
+    margin-bottom: 1;
+}
+
+Button:hover {
+    background: $accent;
+    color: $text;
+}
+
+Button.-primary {
+    background: $accent;
+    text-style: bold;
+}
+
+/* ===========================
+   Optional status blocks
+   =========================== */
+.info_box {
+    border: round $primary;
+    background: $panel;
+    padding: 1 2;
+    color: $text;
+    margin-bottom: 1;
+}
+
+/* ===========================
+   Static widgets
+   =========================== */
+Static {
+    color: $text;
+}
+
+/* ===========================
+   Scrollbar
+   =========================== */
+ScrollBar {
+    background: $surface;
+}
+
+ScrollBar > .scrollbar--handle {
+    background: $primary;
+}
+ScrollBar > .scrollbar--handle:hover {
+    background: $accent;
+}
+
+/* ===========================
+   Focus & Disabled
+   =========================== */
+
+*:focus {
+    outline: $accent;
+}
+
+*:disabled {
+    color: $text-disabled;
+    background: $surface;
+}
+
+/* ===========================
+   Notifications (self.app.notify)
+   =========================== */
+Toast {
+    background: $panel;
+    color: $text;
+    border: round $primary;
+}
+
+Toast.-error {
+    border: round $error;
+    color: $error;
+}
+
+.hidden {
+    display: none;
+}
+
+/* ===========================
+   Menu rows (button + description)
+   =========================== */
+
+.menu_row {
+    width: 100%;
+    height: 3;
+    margin-bottom: 1;
+}
+
+.menu_row:last-of-type {
+    margin-bottom: 0;
+}
+
+
+/* ===========================
+   Menu buttons
+   =========================== */
+
+.menu_button {
+    width: 22;
+    height: 3;
+
+    content-align: left middle;
+    text-style: bold;
+
+    background: $boost;
+    border: round $primary-lighten-2;
+}
+
+.menu_button:hover {
+    background: $accent 20%;
+    text-style: bold reverse;
+}
+
+.menu_button:focus {
+    border: round $accent;
+    background: $accent 15%;
+}
+
+/* Write mode button */
+.menu_button.write {
+    border: round $success;
+    color: $success;
+}
+
+.menu_button.write:hover {
+    background: $success 25%;
+    color: $text;
+}
+
+.menu_button.write:focus {
+    border: round $success;
+    background: $success 20%;
+}
+
+/* Read mode button */
+.menu_button.read {
+    border: round $primary;
+    color: $primary;
+}
+
+.menu_button.read:hover {
+    background: $primary 25%;
+    color: $text;
+}
+
+.menu_button.read:focus {
+    border: round $primary;
+    background: $primary 20%;
+}
+
+/* Path selection button */
+.menu_button.path {
+    border: round $warning;
+    color: $warning;
+}
+
+.menu_button.path:hover {
+    background: $warning 25%;
+    color: $text;
+}
+
+.menu_button.path:focus {
+    border: round $warning;
+    background: $warning 20%;
+}
+
+
+/* ===========================
+   Descriptions
+   =========================== */
+
+.menu_desc {
+    width: 1fr;
+    height: 3;
+
+    content-align: left middle;
+    padding-left: 2;
+
+    color: $text-muted;
+    text-style: italic;
+}
+
+
+/* ===========================
+   Containers
+   =========================== */
+
+#mode_buttons_container {
+    width: 100%;
+    margin-bottom: 2;
+}
+
+#output_path_container {
+    width: 100%;
+    margin-bottom: 2;
+}
+
+#output_path_container.hidden {
+    display: none;
+}
+
+#mode_buttons_container.hidden {
+    display: none;
+}
+
+
+/* ===========================
+   Echo log
+   =========================== */
+
+#echo_log {
+    width: 100%;
+    height: 1fr;
+    border: round $primary;
+    margin-bottom: 1;
+}
+
+
+/* ===========================
+   Input
+   =========================== */
+
+#cli_input {
+    width: 100%;
+    height: 3;
+    border: round $accent;
+}
+
+#cli_input:focus {
+    border: round $accent;
+    background: $accent 10%;
+}
+
+
+/* ===========================
+   Logo & Titles
+   =========================== */
+
+#logo {
+    width: 100%;
+    height: auto;
+    margin-bottom: 1;
+}
+
+.section_title {
+    width: 100%;
+    height: 1;
+    content-align: center middle;
+    text-style: bold;
+    color: $primary;
+    margin-bottom: 1;
+}
+
+
+/* ===========================
+   Focus state
+   =========================== */
+
+*:focus {
+    border: round $accent;
+}

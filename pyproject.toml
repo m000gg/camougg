@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "camougg"
+version = "0.1.0"
+ description = "TUI tool for steganographically hiding and extracting files in lossless image containers (PNG) with password-based protection"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "cryptography>=42.0.0",
+    "matplotlib>=3.8.0",
+    "numpy>=1.26.0",
+    "pillow>=10.2.0",
+    "textual>=0.50.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.3.0",
+]
+
+[project.scripts]
+camougg = "camougg.tui.app:run"
