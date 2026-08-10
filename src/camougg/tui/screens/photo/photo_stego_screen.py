@@ -219,7 +219,7 @@ class PhotoStegoScreen(Screen):
         if self.current_step == "image_path":
             if not os.path.isfile(user_input):
                 log.write(f"[bold red]✗ Error:[/] File '{user_input}' not found.")
-                log.write("[bold yellow]? Try enter the path one again:[/]")
+                log.write("[bold yellow]? Try enter the path once again:[/]")
                 return
 
             self.saved_image_path = user_input
@@ -267,7 +267,7 @@ class PhotoStegoScreen(Screen):
         elif self.current_step == "read_image_path":
             if not os.path.isfile(user_input):
                 log.write(f"[bold red]✗ Error:[/] File '{user_input}' not found.")
-                log.write("[bold yellow]? Try enter the path one again:[/]")
+                log.write("[bold yellow]? Try enter the path once again:[/]")
                 return
 
             self.saved_image_path = user_input
