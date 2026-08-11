@@ -1,5 +1,6 @@
+import os
 import numpy as np
-from camougg.crypto.CSPRNGenerator import CSPRNGenerator
+from camougg.crypto.CSPRN_generator import CSPRNGenerator
 from PIL import Image, UnidentifiedImageError
 
 class StegWriter:
@@ -11,13 +12,25 @@ class StegWriter:
         return width * height
 
     def steg_write(self, img_path, password, message, output_path="output/output1.png"):
-
         if not message:
             raise ValueError("Message cannot be empty")
 
         message = "<{}>{}".format(len(message), message)
+        byte_array = np.frombuffer(message.encode("utf-8"), dtype=np.uint8)
         num_pixels = self.get_num_pixels(img_path)
-        prp = self.generator.hash_password(password, num_pixels)
+
+        if num_pixels < 44:
+            raise ValueError("Image is too small to hide your message.")
+
+        shifts = np.arange(8, dtype=np.uint8)
+        message_bits = (byte_array[:, np.newaxis] >> shifts) & 1
+
+        if message_bits.size > (num_pixels - 44) * 3:
+            raise ValueError("Message length exceeds image capacity")
+
+        salt = os.urandom(16)
+        prp = self.generator.hash_password(password, num_pixels - 44,salt)
+        prp_shifted = [i + 44 for i in prp]
 
         try:
             img = Image.open(img_path)
@@ -28,16 +41,18 @@ class StegWriter:
 
         img_rgb = img.convert("RGB")
         pixel_array = np.array(img_rgb)
-
-        byte_array = np.frombuffer(message.encode("utf-8"), dtype=np.uint8)
-        shifts = np.arange(8, dtype=np.uint8)
-        message_bits = (byte_array[:, np.newaxis] >> shifts) & 1
-
-        if message_bits.size > len(prp):
-            raise ValueError("Message length exceeds image capacity")
-
         flat_pixels = pixel_array.reshape(-1, 3)
-        prp = prp[:message_bits.size]
+
+        salt_pixels = flat_pixels[:44]
+        salt_pixels_shifted = (salt_pixels[..., np.newaxis] >> shifts) & 1 # [[255, 230, 211]] -> [[11111111, 0100010101 ,10111010]]
+        salt_bytes = np.unpackbits(np.frombuffer(salt, dtype=np.uint8)) # [0,1,1,...1]
+        flat_lsb = salt_pixels_shifted[..., 0].flatten() # Take the least significant bit for every color
+        flat_lsb[:128] = salt_bytes # replace 1st 128 bits with salt bites
+        salt_pixels_shifted[..., 0] = flat_lsb.reshape(44, 3) # Reshape to 3D Matrix
+        reconstructed_salt_pixels = np.sum(salt_pixels_shifted << shifts, axis=-1).astype(np.uint8) # Make colors from bits
+        flat_pixels[:44] = reconstructed_salt_pixels # replace original pixels with "salted" pixels
+
+        prp = prp_shifted[:message_bits.size]
 
         chosen_pixels = flat_pixels[prp]
         bits = (chosen_pixels[..., np.newaxis] >> shifts) & 1

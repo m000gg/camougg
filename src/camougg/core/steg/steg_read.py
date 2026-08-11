@@ -1,5 +1,5 @@
 import numpy as np
-from camougg.crypto.CSPRNGenerator import CSPRNGenerator
+from camougg.crypto.CSPRN_generator import CSPRNGenerator
 from PIL import Image
 
 class StegReader:
