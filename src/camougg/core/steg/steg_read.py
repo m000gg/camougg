@@ -17,12 +17,23 @@ class StegReader:
             img_rgb = img.convert("RGB")
             pixel_array = np.array(img_rgb)
             num_pixels = self.get_num_pixels(img_path)
-            prp = self.generator.hash_password(password, num_pixels)
+            if num_pixels < 44:
+                raise ValueError("Image is too small to read your message.")
+
 
             flat_pixels = pixel_array.reshape(-1, 3)
             shifts = np.arange(8, dtype=np.uint8)
+            salt_pixels = flat_pixels[:44]
+            salt_pixels_shifted = (salt_pixels[..., np.newaxis] >> shifts) & 1
+            lsb_salt_pixels = salt_pixels_shifted[..., 0].flatten()[:128]
+            salt = np.packbits(lsb_salt_pixels).tobytes()
 
-            chosen_pixels = flat_pixels[prp]
+
+
+            prp = self.generator.hash_password(password, num_pixels - 44, salt)
+
+            prp_shifted = [i + 44 for i in prp]
+            chosen_pixels = flat_pixels[prp_shifted]
             bits = (chosen_pixels[..., np.newaxis] >> shifts) & 1
             bitstream = bits[..., 0].flatten()
 
