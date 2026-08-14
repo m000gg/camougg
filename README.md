@@ -40,9 +40,23 @@
 
 ## Use Cases
 
-|                      Private file sharing                                                   |                Plausible-looking storage                                      |            Personal experimentation                         |
-|:-------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------:|:-----------------------------------------------------------:|
-| Send a hidden file inside a normal-looking photo, instead of an obviously encrypted archive | Store sensitive data inside a media file that doesn't look suspicious at rest | Learn and experiment with steganography techniques hands-on |
+Steganography is a versatile concept used across different domains of cybersecurity. **camougg** is designed to be a practical tool for both defensive (Blue Team) and offensive (Red Team) scenarios, as well as general privacy.
+
+### 🛡️ Blue Team (Defense, Privacy & Compliance)
+
+| Digital Watermarking & Licensing                                                                                                                                                                                                                        | Plausible-Looking Storage                                                                                                                                                                                                 | Secure Communications                                                                                                                                                                                                  |
+|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Embed invisible cryptographic signatures**, software licenses, or copyright data into corporate media assets. This is highly effective for proving ownership or tracing the source of intellectual property leaks without altering the visible image. | **Store highly sensitive data** (like master encryption keys, passwords, or seed phrases) inside ordinary media files at rest. This avoids the creation of obviously encrypted, attention-grabbing archives on your disk. | **Safely exchange confidential documents** (e.g., whistleblowing) in heavily monitored or restrictive environments where sending PGP messages or standard encrypted archives would immediately trigger network alerts. |
+
+<br>
+
+### ⚔️ Red Team (Offensive Security & Penetration Testing)
+
+> **⚠️ Disclaimer:** The offensive use cases described below are intended **strictly for educational purposes, authorized penetration testing, and defense research.** The author does not condone or support the use of this tool for malicious activities.
+
+| Payload Obfuscation & Evasion                                                                                                                                                                                                       | Covert C2 Communication                                                                                                                                                                                                    | Stealthy Data Exfiltration                                                                                                                                                                        |
+|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Hide malicious payloads** (viruses, reverse shells, or droppers) inside benign PNG/JPEG files. This technique helps bypass standard signature-based antivirus, IDS/IPS, or email gateway filters during an authorized engagement. | **Embed Command & Control (C2) instructions** inside ordinary image downloads. This allows simulated adversaries to communicate across network boundaries while seamlessly blending in with regular, harmless web traffic. | **Smuggle sensitive data** (like database dumps, tokens, or password hashes) out of a restricted corporate network by hiding it within standard stock photos or memes sent via external channels. |
 
 ---
 
