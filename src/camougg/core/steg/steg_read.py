@@ -20,6 +20,79 @@ class StegReader:
             if num_pixels < 44:
                 raise ValueError("Image is too small to read your message.")
 
+            flat_pixels = pixel_array.reshape(-1, 3)
+            shifts = np.arange(8, dtype=np.uint8)
+            salt_pixels = flat_pixels[:44]
+            salt_pixels_shifted = (salt_pixels[..., np.newaxis] >> shifts) & 1
+            lsb_salt_pixels = salt_pixels_shifted[..., 0].flatten()[:128]
+            salt = np.packbits(lsb_salt_pixels).tobytes()
+
+            prp = self.generator.hash_password(password, num_pixels - 44, salt)
+
+            prp_shifted = [i + 44 for i in prp]
+            chosen_pixels = flat_pixels[prp_shifted]
+            bits = (chosen_pixels[..., np.newaxis] >> shifts) & 1
+            bitstream = bits[..., 0].flatten()
+
+            weights = 2 ** np.arange(8, dtype=np.uint16)
+            pos = 0
+
+            def read_next_byte():
+                nonlocal pos
+                if pos + 8 > bitstream.size:
+                    raise ValueError("Invalid password or corrupted image")
+                byte_bits = bitstream[pos:pos + 8]
+                pos += 8
+                return int(np.dot(byte_bits, weights))
+
+            if read_next_byte() != ord('<'):
+                raise ValueError("Invalid password or corrupted image")
+
+            length_bytes = bytearray()
+            while True:
+                b = read_next_byte()
+                if b == ord('|'):
+                    break
+                length_bytes.append(b)
+            try:
+                file_size_bytes = int(length_bytes.decode('ascii'))
+            except ValueError:
+                raise ValueError("Invalid password or corrupted image")
+
+            total_bits = file_size_bytes * 8
+
+            filename_bytes = bytearray()
+            while True:
+                b = read_next_byte()
+                if b == ord('>'):
+                    break
+                filename_bytes.append(b)
+
+            filename = filename_bytes.decode('utf-8', errors='replace')
+
+            if total_bits == 0:
+                return b"", filename
+
+            if pos + total_bits > bitstream.size:
+                raise ValueError("Invalid password or corrupted image")
+            msg_bits = bitstream[pos:pos + total_bits].reshape(-1, 8)
+            byte_values = msg_bits.dot(weights).astype(np.uint8)
+            return bytes(byte_values), filename
+        except (ValueError, OSError, IOError) as e:
+            if "Invalid password" in str(e):
+                raise
+            raise ValueError("Invalid password or corrupted image")
+
+
+    """    def steg_read(self, img_path, password):
+        try:
+            img = Image.open(img_path)
+            img_rgb = img.convert("RGB")
+            pixel_array = np.array(img_rgb)
+            num_pixels = self.get_num_pixels(img_path)
+            if num_pixels < 44:
+                raise ValueError("Image is too small to read your message.")
+
 
             flat_pixels = pixel_array.reshape(-1, 3)
             shifts = np.arange(8, dtype=np.uint8)
@@ -79,4 +152,4 @@ class StegReader:
         except (ValueError, OSError, IOError) as e:
             if "Invalid password" in str(e):
                 raise
-            raise ValueError("Invalid password or corrupted image")
+            raise ValueError("Invalid password or corrupted image")"""
