@@ -3,11 +3,12 @@
 ---
 ## Changelog
 
-| Version  | Date       | Description                                                                                                                                             | Authors                             |
-|----------|------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------|
-| 1.0      | 2026-08-03 | Initial Description                                                                                                                                     | [m000gg](https://github.com/m000gg) |
-| 1.1      | 2026-08-04 | Fixed header example, clarified header decoding vs vectorized message decoding                                                                          | [m000gg](https://github.com/m000gg) |
-| 2.0      | 2026-08-14 | MVP2: random per-embed salt with a fixed unpermuted salt zone, arbitrary-file (bytes) payload instead of UTF-8-only text, extended header with filename | [m000gg](https://github.com/m000gg) |
+| Version   | Date       | Description                                                                                                                                                                                                                                                          | Authors                             |
+|-----------|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------|
+| 1.0       | 2026-08-03 | Initial Description                                                                                                                                                                                                                                                  | [m000gg](https://github.com/m000gg) |
+| 1.1       | 2026-08-04 | Fixed header example, clarified header decoding vs vectorized message decoding                                                                                                                                                                                       | [m000gg](https://github.com/m000gg) |
+| 2.0       | 2026-08-14 | MVP2: random per-embed salt with a fixed unpermuted salt zone, arbitrary-file (bytes) payload instead of UTF-8-only text, extended header with filename                                                                                                              | [m000gg](https://github.com/m000gg) |
+| 2.1       | 2026-08-21 | Layered the implementation: `PNGHandler` (formats/) now owns all Pillow/NumPy image I/O, `PayloadIO` (core/) owns payload-file I/O, `Service` (core/) orchestrates both around the now format-agnostic `steg_write`/`steg_read`. TUI updated to call `Service` only. | [m000gg](https://github.com/m000gg) |
 
 ---
 
@@ -26,16 +27,19 @@ the least significant bit changes the color value by at most one intensity level
 the alteration is practically invisible to the human eye while still allowing
 deterministic recovery of the embedded payload.
 
-As of MVP2, the container is split into two zones: a small **fixed, unpermuted salt
-zone** at the start of the image, and a **permuted payload zone** covering the rest.
-The salt zone stores a randomly generated, per-embed salt in plain raster order —
-this is the only piece of data whose location does not depend on the password. The
-salt is what makes the pixel permutation (see Feature #1) different on every embed,
-even when the same password is reused on the same container.
+The container is split into two zones: a small **fixed, unpermuted salt zone** at
+the start of the image, and a **permuted payload zone** covering the rest. The salt
+zone stores a randomly generated, per-embed salt in plain raster order — this is
+the only piece of data whose location does not depend on the password. The salt is
+what makes the pixel permutation (see Feature #1) different on every embed, even
+when the same password is reused on the same container.
 
-The actual order of modified pixels in the payload zone is **not** decided by this
-feature. Instead, pixel traversal order is provided externally by the
-password-and-salt-based cryptographic permutation generator (see Feature #1).
+As of v2.1, the encoding/decoding logic itself (`steg_write`/`steg_read`) is
+**format-agnostic**: it operates purely on an in-memory flat pixel array and no
+longer touches disk, Pillow, or any PNG-specific detail. All image I/O has moved to
+`PNGHandler`, and all payload-file I/O has moved to `PayloadIO`. A thin `Service`
+layer wires the three together so callers (the TUI, and any future CLI) never
+touch pixels or bytes directly — see Design Decision 12.
 
 ## Feature objectives
 
@@ -45,6 +49,8 @@ password-and-salt-based cryptographic permutation generator (see Feature #1).
 - Preserve visual quality by modifying only one bit per color channel.
 - Recover the original file, and its original filename, without any information loss.
 - Work deterministically together with the password-and-salt-based pixel permutation.
+- Keep the encoding/decoding core independent of the container format, so a future
+  JPEG handler can reuse it without modification.
 
 ## Feature scope
 
@@ -56,14 +62,18 @@ password-and-salt-based cryptographic permutation generator (see Feature #1).
 - Restoring bytes from extracted LSBs.
 - Reading and writing message headers, including payload length and filename.
 - Capacity validation (salt zone + header + payload against container size).
+- Orchestrating payload-file I/O, image I/O, and the encode/decode core into a
+  single call each for embedding and extraction (`Service`).
 
 ### Out of scope
 
 - Selecting embedding locations within the payload zone (handled by Feature #1).
-- Image loading/saving.
+- PNG-specific image loading/saving (handled by `PNGHandler`, see Decision 1).
+- Reading/writing the payload file to disk (handled by `PayloadIO`, see Decision 12).
 - Password-to-key derivation (handled by Feature #1).
 - Encryption of the payload content itself (separate crypto module).
-- JPEG/DCT-domain embedding (separate feature).
+- JPEG/DCT-domain embedding (separate feature — `formats/jpeg_handler.py` will sit
+  alongside `PNGHandler` behind the same load/save contract).
 
 ## User flow
 
@@ -147,6 +157,17 @@ The same validation is performed on the read path: if the declared payload lengt
 in the header exceeds the remaining available bits, extraction is aborted with an
 error instead of returning corrupted data.
 
+### 6. End-to-end via the TUI (new in v2.1)
+
+The user picks Write or Read mode. For Write, the TUI collects the cover image
+path, the file to hide, the password, and an output image path (custom or same
+directory as the cover image), then calls `Service.embed_file(...)` once. For
+Read, the TUI collects the stego image path, the password, and an output
+*directory* (custom or same directory as the stego image), then calls
+`Service.extract_file(...)` once. The TUI never touches pixel arrays, byte
+buffers, or the header format directly — it only passes file paths and a
+password, and displays the resulting output path or any raised error.
+
 ## Functional Requirements
 
 - Accept an arbitrary binary payload (`bytes`), not only UTF-8 text.
@@ -163,6 +184,8 @@ error instead of returning corrupted data.
 - Detect payloads exceeding available capacity, both during embedding and
   extraction, before any partial data is written or returned.
 - Preserve all bits except the least significant one.
+- Accept and return only in-memory flat pixel arrays at the encode/decode core —
+  all disk I/O (image and payload file) happens outside of it.
 
 ## Non-Functional Requirements
 
@@ -177,6 +200,10 @@ error instead of returning corrupted data.
   (e.g. wrong password with no `>` terminator found).
 - Salt-zone encoding/decoding is a fixed-cost operation independent of payload
   size (constant 44-pixel zone).
+- The encode/decode core (`Steganography.steg_write`/`steg_read`) must remain
+  container-format-agnostic, so that adding JPEG support requires only a new
+  handler implementing the same load/save contract as `PNGHandler`, with no
+  changes to `steg_write`/`steg_read` themselves.
 
 # 🛠 Part 2: Technical Realisation
 
@@ -184,35 +211,68 @@ error instead of returning corrupted data.
 
 **Tools used**
 
-- Pillow — image loading/saving.
+- Pillow — image loading/saving (isolated inside `PNGHandler`).
 - NumPy — vectorized manipulation of RGB arrays.
 - `os.urandom` — cryptographically secure salt generation.
-- UTF-8 encoding/decoding (header only — see Design Decision 5).
+- UTF-8 encoding/decoding (header only — see Design Decision 6).
 - Password-and-salt-based permutation generator (Feature #1).
+
+**Module layout**
+
+```
+core/
+  steganography.py    ← steg_write / steg_read: pure LSB/salt/header logic,
+                         operates on flat_pixels in/out, no disk access
+  payload_io.py        ← PayloadIO: read_payload / write_payload,
+                         reads/writes the *hidden* file on disk
+  service.py            ← Service: orchestrates PayloadIO + PNGHandler + Steganography
+                         into embed_file / extract_file
+formats/
+  png_handler.py         ← PNGHandler: load / save / get_num_pixels,
+                         the only module that imports Pillow
+tui/
+  photo_stego_screen.py  ← collects paths/password, calls Service only
+```
 
 ## Explanation of the design decisions
 
-### 1. Image conversion to RGB
+### 1. Image I/O isolated in `PNGHandler`
 
 ```python
-img.convert("RGB")
+class PNGHandler:
+    def load(self, img_path) -> tuple[np.ndarray, tuple]:
+        ...  # Image.open, .convert("RGB"), np.array, reshape(-1, 3)
+        return flat_pixels, original_shape
+
+    def save(self, flat_pixels, original_shape, output_path) -> None:
+        ...  # reshape back, Image.fromarray, .save
+
+    def get_num_pixels(self, filepath) -> int:
+        ...
 ```
 
-The embedding algorithm always operates on RGB images regardless of the original
-image mode. This guarantees that every pixel consists of exactly three independent
-8-bit color channels.
+All Pillow/NumPy-shape-specific work — opening the file, converting to RGB,
+flattening to `(num_pixels, 3)`, and the reverse on save — lives here, together
+with the file-not-found/invalid-image error handling that used to live inside
+`steg_write`. This is what makes `steg_write`/`steg_read` container-agnostic: they
+never call `Image.open` or know about `.png` at all.
 
 ---
 
-### 2. Image represented as a NumPy array, flattened
+### 2. Encode/decode core takes and returns `flat_pixels`, not paths
 
 ```python
-pixel_array = np.array(img_rgb)
-flat_pixels = pixel_array.reshape(-1, 3)
+def steg_write(self, flat_pixels, password, data, filename) -> np.ndarray: ...
+def steg_read(self, flat_pixels, password) -> tuple[bytes, str]: ...
 ```
 
-The image becomes `number_of_pixels × RGB` instead of individual Pillow pixel
-objects, giving every pixel a single integer index.
+`steg_write` mutates and returns `flat_pixels` directly (no `Image.save` call
+inside it); `steg_read` takes an already-loaded `flat_pixels` and returns the
+recovered `(data, filename)`. Neither function knows how `flat_pixels` was
+produced or where the result will be written — that is the caller's job. This is
+the same contract for both PNG today and JPEG later: any handler that can produce
+a `(flat_pixels, original_shape)` pair and consume a `flat_pixels` array back can
+be swapped in without touching this file.
 
 ---
 
@@ -236,14 +296,15 @@ creating a circular dependency (you would need the salt to find the salt).
 
 Only the LSB (bit-plane 0) of each channel in this zone is modified — the same
 "decompose into 8 bit-planes, replace plane 0, recompose" approach used for the
-payload zone (see Decision 6).
+payload zone (see Decision 7).
 
 ---
 
 ### 4. Deriving the payload-zone permutation from password + salt
 
 ```python
-prp = generator.hash_password(password, num_pixels - 44, salt)
+num_pixels = flat_pixels.shape[0]
+prp = self.generator.hash_password(password, num_pixels - 44, salt)
 prp_shifted = [i + 44 for i in prp]
 ```
 
@@ -254,9 +315,17 @@ to map them onto the actual payload-zone pixel range (`[44, num_pixels - 1]`).
 Because the domain is restricted *before* generation (not filtered *after*), a
 collision with the salt zone is structurally impossible, not merely unlikely.
 
+`num_pixels` is derived from `flat_pixels.shape[0]` directly — since v2.1 there is
+no `img_path` in scope inside `steg_write`/`steg_read` to call `get_num_pixels` on.
+
 On read, the same salt (recovered from the fixed zone) and the same password
 reproduce the identical `prp_shifted`, so header and payload are read from exactly
 the pixels they were written to.
+
+On write, only `ceil(payload_bits / 3)` pixels are actually consumed from
+`prp_shifted` (`prp_shifted[:num_pixels_needed]`) — matching the true 3-bits-per-
+pixel capacity used by the capacity check in Decision 9, rather than reserving one
+pixel per bit.
 
 ---
 
@@ -293,9 +362,8 @@ The header is still encoded as UTF-8 text (see Decision 5) — that part of the
 design does not change from v1.
 
 The payload, however, is treated as raw `bytes` end-to-end and is **never**
-passed through `.decode("utf-8", errors="replace")`. In v1, decoding the message
-body as UTF-8 was safe because the body was always text. For arbitrary files, the
-byte stream is not guaranteed to be valid UTF-8 at all — decoding it with
+passed through `.decode("utf-8", errors="replace")`. For arbitrary files, the byte
+stream is not guaranteed to be valid UTF-8 at all — decoding it with
 `errors="replace"` would silently substitute a placeholder character for any byte
 sequence that isn't valid UTF-8, corrupting the payload irrecoverably and breaking
 byte-for-byte round-trip. The payload is therefore returned as `bytes` directly
@@ -324,7 +392,7 @@ plain raster order).
 
 ### 9. Capacity validation
 
-Before modifying the image, the encoder verifies, in this order:
+Before modifying the pixel array, the encoder verifies, in this order:
 
 1. `num_pixels >= 44` — the container is large enough to even hold the salt zone.
 2. `(header_bits + payload_bits) <= (num_pixels - 44) * 3` — the header plus
@@ -343,15 +411,16 @@ of the available bitstream.
 
 ### 10. Reconstruction
 
-After modifying the selected channels in both the salt zone and the payload zone,
-the modified pixel array is reshaped back into its original `height × width × RGB`
-dimensions and written as a new image.
+`steg_write` mutates the salt-zone and payload-zone slices of `flat_pixels`
+in place and returns it. Reshaping the flat array back into `height × width × RGB`
+and writing it as an image file is `PNGHandler.save`'s responsibility, not this
+function's — see Decision 1.
 
 ---
 
 ### 11. Extraction
 
-Extraction performs the reverse process:
+Extraction performs the reverse process on an already-loaded `flat_pixels`:
 
 1. Read the salt from the fixed zone (`flat_pixels[:44]`), no password required
    for this step.
@@ -366,7 +435,49 @@ Extraction performs the reverse process:
    into `(payload_length, 8)` and converted to byte values via a dot product with
    bit weights `[1, 2, 4, 8, 16, 32, 64, 128]`.
 6. Return the raw payload `bytes` (no UTF-8 decoding — see Decision 6) together
-   with the recovered `filename`.
+   with the recovered `filename`. Writing these bytes out as a file on disk is
+   `PayloadIO.write_payload`'s responsibility — see Decision 12.
+
+---
+
+### 12. Orchestration: `PayloadIO` and `Service` (new in v2.1)
+
+```python
+class PayloadIO:
+    def read_payload(self, path) -> tuple[bytes, str]:
+        ...  # open(path, "rb").read() + os.path.basename(path)
+
+    def write_payload(self, data, filename, output_dir) -> str:
+        ...  # writes data to output_dir/filename, returns the full path
+
+class Service:
+    def __init__(self):
+        self.payload_io = PayloadIO()
+        self.steganography = Steganography()
+        self.png_handler = PNGHandler()
+
+    def embed_file(self, cover_img_path, payload_path, password, output_path):
+        data, filename = self.payload_io.read_payload(payload_path)
+        flat_pixels, original_shape = self.png_handler.load(cover_img_path)
+        modified = self.steganography.steg_write(flat_pixels, password, data, filename)
+        self.png_handler.save(modified, original_shape, output_path)
+
+    def extract_file(self, img_path, password, output_dir):
+        flat_pixels, original_shape = self.png_handler.load(img_path)
+        data, filename = self.steganography.steg_read(flat_pixels, password)
+        return self.payload_io.write_payload(data, filename, output_dir)
+```
+
+`PayloadIO` is the mirror of `PNGHandler`, but for the file being hidden rather
+than the container: `read_payload` turns a path into `(bytes, filename)` before
+`steg_write`; `write_payload` turns `steg_read`'s returned `(bytes, filename)` back
+into a real file on disk after extraction. Neither function is container-format
+aware.
+
+`Service` is a thin orchestration layer with no domain logic of its own — it only
+sequences calls to the other three components and passes data between them. This
+is what the TUI (and any future CLI entry point) calls; nothing outside `Service`
+needs to know that `flat_pixels`, salts, or permutations exist at all.
 
 ```mermaid
 graph TD
@@ -379,7 +490,7 @@ S2 --> D[Derive permutation from password+salt]
 
 C --> E["Replace LSB of selected RGB channels"]
 D --> E
-E --> F[Modified image]
+E --> F[Modified flat_pixels]
 
 F --> G["Read salt from fixed zone"]
 G --> H[Derive identical permutation]
@@ -392,21 +503,27 @@ J --> K[Recovered file bytes + filename]
 
 This feature does not create any persistent data or database models.
 
-Input:
+**`Steganography.steg_write` / `steg_read`** (core, format-agnostic):
 
-- `data: bytes` — the file content to embed.
-- `filename: str` — the original file's full name, including extension.
-- `password: str`
-- RGB image.
+- In: `flat_pixels: np.ndarray`, `password: str`, `data: bytes`, `filename: str`
+- Out: modified `flat_pixels: np.ndarray` (write) / `(data: bytes, filename: str)` (read)
 
-Output (embed):
+**`PNGHandler.load` / `save`**:
 
-- Modified RGB image after embedding (salt zone + payload zone).
+- In: `img_path: str` (load) / `flat_pixels, original_shape, output_path` (save)
+- Out: `(flat_pixels, original_shape)` (load) / `None` (save)
 
-Output (extract):
+**`PayloadIO.read_payload` / `write_payload`**:
 
-- `filename: str` — the recovered original file name.
-- `data: bytes` — the recovered original file content, byte-for-byte.
+- In: `path: str` (read) / `data: bytes, filename: str, output_dir: str` (write)
+- Out: `(data: bytes, filename: str)` (read) / `output_path: str` (write)
+
+**`Service.embed_file` / `extract_file`** (what the TUI calls):
+
+- In: `cover_img_path, payload_path, password, output_path` (embed) /
+  `img_path, password, output_dir` (extract)
+- Out: `None` (embed — result is the file at `output_path`) /
+  `saved_file_path: str` (extract)
 
 ## Open questions
 
@@ -429,17 +546,23 @@ to increase embedding capacity while accepting greater visual distortion?
 
 *(Out of scope for MVP2 — explicitly deferred.)*
 
-### Q3
+### Q3 (resolved in v2.1)
 
-The write path currently instantiates its own generator locally
-(`generator = CSPRNGenerator()`), while the read path accesses it via
-`self.generator`. Should generator ownership be unified — e.g. always injected via
-`__init__` — to keep write and read symmetric within the same class?
+> The write path currently instantiates its own generator locally
+> (`generator = CSPRNGenerator()`), while the read path accesses it via
+> `self.generator`. Should generator ownership be unified — e.g. always injected via
+> `__init__` — to keep write and read symmetric within the same class?
 
-### Q4 (new in v2.0)
+Resolved as part of the v2.1 refactor: `steg_write` and `steg_read` are methods on
+the same `Steganography` instance and both use `self.generator`, injected once via
+`__init__`. There is no longer a locally-instantiated generator on the write path.
+
+### Q4
 
 The salt zone is fixed at 44 pixels regardless of container size. For very small
 containers, this represents a proportionally larger fixed cost. Should the minimum
 supported container size be explicitly documented/enforced elsewhere (e.g. in the
-TUI or a top-level `embed()` wrapper), rather than only surfacing as a capacity
-error at write time?
+TUI or `Service`), rather than only surfacing as a capacity error at write time?
+
+*(Still open — `Service`/TUI currently only surface the existing `num_pixels < 44`
+error from `steg_write`; no explicit minimum-size guidance is shown up front.)*
