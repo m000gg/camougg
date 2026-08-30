@@ -1,6 +1,7 @@
 import numpy as np
 from camougg.crypto.CSPRN_generator import CSPRNGenerator
 import os
+import jpeglib
 
 
 class Steganography:
@@ -119,3 +120,66 @@ class Steganography:
         flat_pixels[prp] = reconstructed_array
 
         return flat_pixels
+
+    def steg_write_dct(self, cover_img_path, password, data, filename):
+        if not data:
+            raise ValueError("Message cannot be empty")
+
+        Y, CbCr, qt = jpeglib.read_dct(cover_img_path)
+
+        num_block_rows = Y.shape[1]
+        num_block_cols = Y.shape[2]
+
+        usable_positions = []
+
+        for block_row in range(num_block_rows):
+            for block_col in range(num_block_cols):
+                for row_in_block in range(8):
+                    for col_in_block in range(8):
+
+                        if row_in_block == 0 and col_in_block == 0:
+                            continue  #DC ( Direct Current)
+
+                        coefficient = Y[0, block_row, block_col, row_in_block, col_in_block]
+
+                        if abs(coefficient) >= 3:
+                            usable_positions.append((block_row, block_col, row_in_block, col_in_block))
+
+        header = "<{}|{}>".format(len(data), filename)
+        header_bytes = header.encode("utf-8")
+        full_payload = header_bytes + data
+
+        if len(usable_positions) < full_payload *8 :
+            raise ValueError("Image is too small to hide your message.")
+
+        salt = os.urandom(16)
+        prp = self.generator.hash_password(password, len(usable_positions) - 128, salt)
+        salt_positions = usable_positions[:128]
+        remaining_positions = usable_positions[128:]
+        prp_shifted = [i + 128 for i in prp]
+
+        salt_bits = [int(bit) for byte in salt for bit in f'{byte:08b}']
+        for bit_index, salt_bit in enumerate(salt_bits):
+            coordinate = salt_positions[bit_index]
+            block_row, block_col, row_in_block, col_in_block = coordinate
+
+            coefficient = Y[0, block_row, block_col, row_in_block, col_in_block]
+
+            if (abs(coefficient) % 2 == 0 and salt_bit == 0) or (abs(coefficient) % 2 == 1 and salt_bit == 1):
+                pass
+            else:
+                if coefficient < 0:
+                    Y[0, block_row, block_col, row_in_block, col_in_block] += 1
+                else:
+                    Y[0, block_row, block_col, row_in_block, col_in_block] -= 1
+
+
+
+
+
+
+
+
+
+
+
