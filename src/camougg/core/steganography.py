@@ -125,7 +125,7 @@ class Steganography:
         if not data:
             raise ValueError("Message cannot be empty")
 
-        Y, CbCr, qt = jpeglib.read_dct(cover_img_path)
+        Y, CbCr, qt = jpeglib.read_dct(cover_img_path) # move to jpeg handler
 
         num_block_rows = Y.shape[1]
         num_block_cols = Y.shape[2]
@@ -145,18 +145,21 @@ class Steganography:
                         if abs(coefficient) >= 3:
                             usable_positions.append((block_row, block_col, row_in_block, col_in_block))
 
+        if len(usable_positions) < 128:
+            raise ValueError("Image is too small to hide your message.")
+
         header = "<{}|{}>".format(len(data), filename)
         header_bytes = header.encode("utf-8")
-        full_payload = header_bytes + data
+        full_payload = header_bytes + data # bytes
 
-        if len(usable_positions) < full_payload *8 :
+        if len(usable_positions) - 128 < len(full_payload) *8 :
             raise ValueError("Image is too small to hide your message.")
 
         salt = os.urandom(16)
         prp = self.generator.hash_password(password, len(usable_positions) - 128, salt)
         salt_positions = usable_positions[:128]
         remaining_positions = usable_positions[128:]
-        prp_shifted = [i + 128 for i in prp]
+        prp_shifted = [i for i in prp]
 
         salt_bits = [int(bit) for byte in salt for bit in f'{byte:08b}']
         for bit_index, salt_bit in enumerate(salt_bits):
@@ -172,6 +175,26 @@ class Steganography:
                     Y[0, block_row, block_col, row_in_block, col_in_block] += 1
                 else:
                     Y[0, block_row, block_col, row_in_block, col_in_block] -= 1
+
+        payload_bits = [int(bit) for byte in full_payload for bit in f'{byte:08b}']
+
+        for bit_index, salt_bit in enumerate(payload_bits):
+            position_index = prp_shifted[bit_index]
+            coordinate = remaining_positions[position_index]
+            block_row, block_col, row_in_block, col_in_block = coordinate
+
+            coefficient = Y[0, block_row, block_col, row_in_block, col_in_block]
+
+            if (abs(coefficient) % 2 == 0 and salt_bit == 0) or (abs(coefficient) % 2 == 1 and salt_bit == 1):
+                pass
+            else:
+                if coefficient < 0:
+                    Y[0, block_row, block_col, row_in_block, col_in_block] += 1
+                else:
+                    Y[0, block_row, block_col, row_in_block, col_in_block] -= 1
+
+        return Y
+
 
 
 
