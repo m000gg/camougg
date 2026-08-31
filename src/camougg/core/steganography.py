@@ -195,14 +195,101 @@ class Steganography:
 
         return Y
 
+    def steg_read_dct(self, Y, password):
+        try:
+            num_block_rows = Y.shape[1]
+            num_block_cols = Y.shape[2]
 
+            usable_positions = []
 
+            for block_row in range(num_block_rows):
+                for block_col in range(num_block_cols):
+                    for row_in_block in range(8):
+                        for col_in_block in range(8):
 
+                            if row_in_block == 0 and col_in_block == 0:
+                                continue  # DC ( Direct Current)
 
+                            coefficient = Y[0, block_row, block_col, row_in_block, col_in_block]
 
+                            if abs(coefficient) >= 3:
+                                usable_positions.append((block_row, block_col, row_in_block, col_in_block))
 
+            salt_positions = usable_positions[:128]
+            remaining_positions = usable_positions[128:]
 
+            salt_bits = []
+            for coordinate in salt_positions: # coordinate = (block_row, block_column, row_in_block, column_in_block)
+                coef = abs(Y[0, *coordinate])
+                if coef % 2 == 0:
+                    salt_bits.append(0)
+                else:
+                    salt_bits.append(1)
 
+            salt = np.packbits(salt_bits).tobytes()
 
+            prp = self.generator.hash_password(password, len(usable_positions) - 128, salt)
+            prp_shifted = [i for i in prp]
 
+            pos = 0
 
+            def read_next_byte():
+                nonlocal pos
+                if pos + 8 > len(prp_shifted):
+                    raise ValueError("Invalid password or corrupted image")
+
+                bits = []
+                for i in range(8):
+                    position_index = prp_shifted[pos + i]
+                    coordinate = remaining_positions[position_index]
+                    block_row, block_col, row_in_block, col_in_block = coordinate
+
+                    coefficient = Y[0, block_row, block_col, row_in_block, col_in_block]
+                    bits.append(abs(coefficient) % 2)
+
+                pos += 8
+
+                byte_value = 0
+                for bit in bits:
+                    byte_value = (byte_value << 1) | bit
+
+                return byte_value
+
+            if read_next_byte() != ord('<'):
+                raise ValueError("Invalid password or corrupted image")
+
+            length_bytes = bytearray()
+            while True:
+                b = read_next_byte()
+                if b == ord('|'):
+                    break
+                length_bytes.append(b)
+            try:
+                file_size_bytes = int(length_bytes.decode('ascii'))
+            except ValueError:
+                raise ValueError("Invalid password or corrupted image")
+
+            total_bits = file_size_bytes * 8
+
+            filename_bytes = bytearray()
+            while True:
+                b = read_next_byte()
+                if b == ord('>'):
+                    break
+                filename_bytes.append(b)
+
+            filename = filename_bytes.decode('utf-8', errors='replace')
+
+            if total_bits == 0:
+                return b"", filename
+
+            if pos + total_bits > len(prp_shifted):
+                raise ValueError("Invalid password or corrupted image")
+            payload_bytes = bytearray()
+            for _ in range(file_size_bytes):
+                payload_bytes.append(read_next_byte())
+            return bytes(payload_bytes), filename
+        except (ValueError) as e:
+            if "Invalid password" in str(e):
+                raise
+            raise ValueError("Invalid password or corrupted image")
