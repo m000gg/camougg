@@ -121,14 +121,12 @@ class Steganography:
 
         return flat_pixels
 
-    def steg_write_dct(self, cover_img_path, password, data, filename):
+    def steg_write_dct(self, Y, password, data, filename):
         if not data:
             raise ValueError("Message cannot be empty")
 
-        Y, CbCr, qt = jpeglib.read_dct(cover_img_path) # move to jpeg handler
-
-        num_block_rows = Y.shape[1]
-        num_block_cols = Y.shape[2]
+        num_block_rows = Y.shape[0]
+        num_block_cols = Y.shape[1]
 
         usable_positions = []
 
@@ -140,7 +138,7 @@ class Steganography:
                         if row_in_block == 0 and col_in_block == 0:
                             continue  #DC ( Direct Current)
 
-                        coefficient = Y[0, block_row, block_col, row_in_block, col_in_block]
+                        coefficient = Y[ block_row, block_col, row_in_block, col_in_block]
 
                         if abs(coefficient) >= 3:
                             usable_positions.append((block_row, block_col, row_in_block, col_in_block))
@@ -166,15 +164,15 @@ class Steganography:
             coordinate = salt_positions[bit_index]
             block_row, block_col, row_in_block, col_in_block = coordinate
 
-            coefficient = Y[0, block_row, block_col, row_in_block, col_in_block]
+            coefficient = Y[ block_row, block_col, row_in_block, col_in_block]
 
             if (abs(coefficient) % 2 == 0 and salt_bit == 0) or (abs(coefficient) % 2 == 1 and salt_bit == 1):
                 pass
             else:
                 if coefficient < 0:
-                    Y[0, block_row, block_col, row_in_block, col_in_block] += 1
+                    Y[ block_row, block_col, row_in_block, col_in_block] -= 1
                 else:
-                    Y[0, block_row, block_col, row_in_block, col_in_block] -= 1
+                    Y[ block_row, block_col, row_in_block, col_in_block] += 1
 
         payload_bits = [int(bit) for byte in full_payload for bit in f'{byte:08b}']
 
@@ -183,22 +181,22 @@ class Steganography:
             coordinate = remaining_positions[position_index]
             block_row, block_col, row_in_block, col_in_block = coordinate
 
-            coefficient = Y[0, block_row, block_col, row_in_block, col_in_block]
+            coefficient = Y[block_row, block_col, row_in_block, col_in_block]
 
             if (abs(coefficient) % 2 == 0 and salt_bit == 0) or (abs(coefficient) % 2 == 1 and salt_bit == 1):
                 pass
             else:
                 if coefficient < 0:
-                    Y[0, block_row, block_col, row_in_block, col_in_block] += 1
+                    Y[ block_row, block_col, row_in_block, col_in_block] -= 1
                 else:
-                    Y[0, block_row, block_col, row_in_block, col_in_block] -= 1
+                    Y[ block_row, block_col, row_in_block, col_in_block] += 1
 
         return Y
 
     def steg_read_dct(self, Y, password):
         try:
-            num_block_rows = Y.shape[1]
-            num_block_cols = Y.shape[2]
+            num_block_rows = Y.shape[0]
+            num_block_cols = Y.shape[1]
 
             usable_positions = []
 
@@ -210,7 +208,7 @@ class Steganography:
                             if row_in_block == 0 and col_in_block == 0:
                                 continue  # DC ( Direct Current)
 
-                            coefficient = Y[0, block_row, block_col, row_in_block, col_in_block]
+                            coefficient = Y[block_row, block_col, row_in_block, col_in_block]
 
                             if abs(coefficient) >= 3:
                                 usable_positions.append((block_row, block_col, row_in_block, col_in_block))
@@ -220,7 +218,7 @@ class Steganography:
 
             salt_bits = []
             for coordinate in salt_positions: # coordinate = (block_row, block_column, row_in_block, column_in_block)
-                coef = abs(Y[0, *coordinate])
+                coef = abs(Y[*coordinate])
                 if coef % 2 == 0:
                     salt_bits.append(0)
                 else:
@@ -244,7 +242,7 @@ class Steganography:
                     coordinate = remaining_positions[position_index]
                     block_row, block_col, row_in_block, col_in_block = coordinate
 
-                    coefficient = Y[0, block_row, block_col, row_in_block, col_in_block]
+                    coefficient = Y[ block_row, block_col, row_in_block, col_in_block]
                     bits.append(abs(coefficient) % 2)
 
                 pos += 8

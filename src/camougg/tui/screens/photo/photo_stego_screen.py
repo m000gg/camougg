@@ -246,9 +246,9 @@ class PhotoStegoScreen(Screen):
         log.write(f"\n[bold green]✓ Choice:[/] Same Directory")
 
         if self.current_step == "set_directory":
-            base = os.path.splitext(os.path.basename(self.saved_image_path))[0]
+            base, ext = os.path.splitext(os.path.basename(self.saved_image_path))
             self.output_image_path = os.path.join(
-                os.path.dirname(self.saved_image_path) or ".", f"{base}_stego.png"
+                os.path.dirname(self.saved_image_path) or ".", f"{base}_stego{ext}"
             )
             log.write(f"[bold green]✓ Using default output path:[/] {self.output_image_path}")
             self.current_step = "ready"
