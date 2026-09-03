@@ -1,25 +1,49 @@
+import numpy as np
 import pytest
-from pathlib import Path
 from PIL import Image
-from camougg.core.steg.steg_write import StegWriter
+
+from camougg.core.service import Service
 
 @pytest.fixture
-def test_image(tmp_path):
-    img = Image.new('RGB', (200, 200), color='white')
-    img_path = tmp_path / "test.png"
-    img.save(img_path)
-    return str(img_path)
+def service():
+    return Service()
+
 
 @pytest.fixture
-def large_test_image(tmp_path):
-    img = Image.new('RGB', (2000, 2000), color='white')
-    img_path = tmp_path / "large_test.png"
-    img.save(img_path)
-    return str(img_path)
+def cover_png(tmp_path):
+    img = Image.new("RGB", (200, 200), color="white")
+    path = tmp_path / "cover.png"
+    img.save(path)
+    return str(path)
+
 
 @pytest.fixture
-def embedded_image(test_image, tmp_path):
-    output = tmp_path / "embedded.png"
-    writer = StegWriter()
-    writer.steg_write(test_image, "correct_password", "expected_secret", str(output))
-    return str(output)
+def tiny_cover_png(tmp_path):
+    img = Image.new("RGB", (10, 10), color="white")
+    path = tmp_path / "tiny_cover.png"
+    img.save(path)
+    return str(path)
+
+
+@pytest.fixture
+def cover_jpeg(tmp_path):
+    rng = np.random.default_rng(seed=42)
+    pixels = rng.integers(0, 256, size=(200, 200, 3), dtype=np.uint8)
+    img = Image.fromarray(pixels, mode="RGB")
+    path = tmp_path / "cover.jpg"
+    img.save(path, format="JPEG", quality=90)
+    return str(path)
+
+
+@pytest.fixture
+def payload_file(tmp_path):
+    path = tmp_path / "secret.txt"
+    path.write_bytes(b"My secret message!")
+    return str(path)
+
+
+@pytest.fixture
+def empty_payload_file(tmp_path):
+    path = tmp_path / "empty.txt"
+    path.write_bytes(b"")
+    return str(path)

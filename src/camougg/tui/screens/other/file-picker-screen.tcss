@@ -4,6 +4,7 @@
 
 FilePickerScreen {
     align: center middle;
+    background: $surface 60%;
 }
 
 #picker_container {
