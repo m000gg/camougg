@@ -34,15 +34,29 @@
 ---
 
 ## About this project
-**camougg** is a terminal user interface (TUI) tool for steganographically hiding arbitrary files inside multimedia containers, and extracting them back losslessly. A payload (a document, an archive, any binary data) is embedded into an ordinary-looking image so it can be shared or stored without drawing attention, and optionally protected with a password before it's embedded. The MVP focuses on image containers, with audio and video support planned for later releases.
+**camougg** is a terminal user interface (TUI) tool for steganographically hiding arbitrary files inside multimedia containers, and extracting them back losslessly. A payload (a document, an archive, any binary data) is embedded into an ordinary-looking image so it can be shared or stored without drawing attention, and is always protected with a password before it's embedded — a fresh random salt is generated on every embed, so hiding the same file with the same password twice never produces the same output. The MVP focuses on image containers (PNG and JPEG), with audio and video support planned for later releases.
 
 ---
 
 ## Use Cases
 
-|                      Private file sharing                                                   |                Plausible-looking storage                                      |            Personal experimentation                         |
-|:-------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------:|:-----------------------------------------------------------:|
-| Send a hidden file inside a normal-looking photo, instead of an obviously encrypted archive | Store sensitive data inside a media file that doesn't look suspicious at rest | Learn and experiment with steganography techniques hands-on |
+Steganography is a versatile concept used across different domains of cybersecurity. **camougg** is designed to be a practical tool for both defensive (Blue Team) and offensive (Red Team) scenarios, as well as general privacy.
+
+### 🛡️ Blue Team (Defense, Privacy & Compliance)
+
+| Digital Watermarking & Licensing                                                                                                                                                                                                                        | Plausible-Looking Storage                                                                                                                                                                                                 | Secure Communications                                                                                                                                                                                                  |
+|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Embed invisible cryptographic signatures**, software licenses, or copyright data into corporate media assets. This is highly effective for proving ownership or tracing the source of intellectual property leaks without altering the visible image. | **Store highly sensitive data** (like master encryption keys, passwords, or seed phrases) inside ordinary media files at rest. This avoids the creation of obviously encrypted, attention-grabbing archives on your disk. | **Safely exchange confidential documents** (e.g., whistleblowing) in heavily monitored or restrictive environments where sending PGP messages or standard encrypted archives would immediately trigger network alerts. |
+
+<br>
+
+### ⚔️ Red Team (Offensive Security & Penetration Testing)
+
+> **⚠️ Disclaimer:** The offensive use cases described below are intended **strictly for educational purposes, authorized penetration testing, and defense research.** The author does not condone or support the use of this tool for malicious activities.
+
+| Payload Obfuscation & Evasion                                                                                                                                                                                                       | Covert C2 Communication                                                                                                                                                                                                    | Stealthy Data Exfiltration                                                                                                                                                                        |
+|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Hide malicious payloads** (viruses, reverse shells, or droppers) inside benign PNG/JPEG files. This technique helps bypass standard signature-based antivirus, IDS/IPS, or email gateway filters during an authorized engagement. | **Embed Command & Control (C2) instructions** inside ordinary image downloads. This allows simulated adversaries to communicate across network boundaries while seamlessly blending in with regular, harmless web traffic. | **Smuggle sensitive data** (like database dumps, tokens, or password hashes) out of a restricted corporate network by hiding it within standard stock photos or memes sent via external channels. |
 
 ---
 
@@ -57,20 +71,22 @@ Most existing steganography tools are either outdated GUI applications, unmainta
 ---
 
 ## Features
-* **File embedding**: hide any file inside a PNG or JPEG image using LSB steganography.
-* **Lossless extraction**: recover the original file byte-for-byte from a carrier image.
-* **Password protection**: encrypt the payload before embedding it.
-* **Interactive TUI**: guided, keyboard-driven interface (built with Textual) — no need to memorize flags.*
+* **Arbitrary file embedding**: hide any file — not just text — inside a PNG or JPEG image.
+* **Two container formats**: PNG via pixel-domain LSB, JPEG via DCT-coefficient-domain embedding, so the payload survives JPEG's lossy compression instead of being destroyed by it.
+* **Lossless extraction**: recover the original file byte-for-byte, under its original filename, from a carrier image.
+* **Real password protection**: a fresh random salt is generated on every embed, so hiding the same file with the same password twice never produces identical output; a wrong password fails with a clear, generic error instead of returning garbled data.
+* **Capacity checking**: an oversized payload is rejected with a clear error before anything is written, never as a silent, corrupted output.
+* **Visual file picker**: browse and pick cover images and payload files directly in the terminal — no need to type out full paths.
+* **Interactive TUI**: guided, keyboard-driven interface (built with Textual) — no need to memorize flags.
 * **Local-first**: everything runs on your machine, nothing is uploaded anywhere.
 
 ---
 
 ## 📸 App Screenshots
 
-
-|                                    Embed flow                                    |                                     Extract flow                                     |
-|:--------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|
-| <img src="docs/assets/screenshots/embed.svg" width="850" alt="Embed screenshot"> | <img src="docs/assets/screenshots/extract.svg" width="850" alt="Extract screenshot"> |
+|                                     Embed flow                                     |                                      Extract flow                                      |                                 File picker                                                  |
+|:----------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------:|
+| <img src="docs/assets/screenshots/embed-2.svg" width="850" alt="Embed screenshot"> | <img src="docs/assets/screenshots/extract-2.svg" width="850" alt="Extract screenshot"> | <img src="docs/assets/screenshots/file_picker.svg" width="850" alt="File picker screenshot"> |
 
 ---
 
@@ -82,17 +98,18 @@ Most existing steganography tools are either outdated GUI applications, unmainta
 camougg/
 ├─ src/
 │  └─ camougg/
-│     ├─ core/                              ← steganography engine (embed/extract, LSB logic)
+│     ├─ core/                              ← steganography engine (embed/extract, DCT/LSB logic,
+│     │                                        payload I/O, Service orchestration)
 │     ├─ crypto/                            ← payload encryption/decryption (password-based)
-│     ├─ formats/                           ← per-container-format handling (PNG, JPEG)
-│     ├─ tui/                               ← Textual-based interactive interface
+│     ├─ formats/                           ← per-container-format handling (PNGHandler, JPEGHandler)
+│     ├─ tui/                               ← Textual-based interactive interface, incl. file picker
 │     ├─ __init__.py
 │     └─ __main__.py                        ← CLI entry point
 ├─ docs/                                    ← documentation, screenshots
 │  ├─ features/                             ← features description & explanation
 │  ├─ logo.png                              ← project logo used in this README
 │  └─ screenshots/                          ← app screenshots used in this README
-├─ tests/                                   ← unit tests
+├─ tests/                                   ← unit and integration tests
 ├─ pytest.ini
 ├─ pyproject.toml                           ← project metadata and dependencies
 └─ README.md                                ← project description and instructions 
@@ -101,18 +118,20 @@ camougg/
 ---
 
 ## Architecture Overview
-camougg is a single-package Python CLI/TUI application. The core steganography engine is kept independent from the interface layer, so the same embed/extract logic can eventually be driven by the TUI, a future scripting API, or additional container-format modules (audio, video) without rewriting the core.
+camougg is a single-package Python CLI/TUI application. The core steganography engine is kept independent from both the interface layer and the container format: `Steganography` operates purely on in-memory pixel or coefficient arrays, while `PNGHandler` and `JPEGHandler` own all the format-specific file I/O. A thin `Service` layer wires payload I/O, the correct format handler, and the core embed/extract logic together, and picks PNG or JPEG handling automatically based on the cover file's extension. This means the same core logic can eventually be driven by the TUI, a future scripting API, or additional container-format modules (audio, video) without being rewritten.
 
 ---
 
 ## Technology Stack
-| Category         | Technologies            |
-|------------------|-------------------------|
-| Language         | Python                  |
-| TUI              | Textual                 |
-| Image processing | Pillow (planned/likely) |
-| Packaging        | pip / PyPI (TBD)        |
-| Version Control  | Git, GitHub             |
+| Category             | Technologies                                  |
+|----------------------|-----------------------------------------------|
+| Language             | Python                                        |
+| TUI                  | Textual                                       |
+| Image processing     | Pillow (PNG), jpeglib (JPEG DCT coefficients) |
+| Numerical operations | NumPy                                         |
+| Cryptography         | scrypt + ChaCha20-based permutation generator |
+| Packaging            | pip / PyPI (TBD)                              |
+| Version Control      | Git, GitHub                                   |
 
 ---
 
@@ -123,6 +142,7 @@ camougg is a single-package Python CLI/TUI application. The core steganography e
 | **MVP-first**             | Image support (PNG/JPEG) ships first; audio and video are deliberately deferred.                                         |
 | **Local-first & private** | No network calls, no telemetry — all processing happens on the user's machine.                                           |
 | **Lossless correctness**  | Extraction must reproduce the original payload byte-for-byte; this is treated as a hard requirement, not a nice-to-have. |
+| **Fail loud, fail early** | Oversized payloads and wrong passwords are rejected with a clear error before or instead of writing corrupted output.    |
 
 ---
 
@@ -152,11 +172,10 @@ pip install -e .
 python -m camougg
 ```
 
-Launches the interactive TUI, where you can choose:
-- a carrier image
-- a file to embed
-- an optional password
-- the mode: embed or extract
+Launches the interactive TUI, where you can:
+- pick a carrier image (PNG or JPEG) and a file to embed, using the built-in file picker
+- set a password
+- choose to embed a file into the image, or extract a previously hidden file back out
 
 
 ---

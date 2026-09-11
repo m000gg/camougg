@@ -15,6 +15,7 @@ dependencies = [
     "numpy>=1.26.0",
     "pillow>=10.2.0",
     "textual>=0.50.0",
+    "jpeglib>=1.0.2",
 ]
 
 [project.optional-dependencies]
