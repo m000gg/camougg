@@ -3,7 +3,10 @@ import os
 class PayloadIO:
 
     def write_payload(self, data: bytes, filename: str, output_dir: str) -> str:
-        output_path = os.path.join(output_dir, filename)
+        safe_filename = os.path.basename(filename)
+        if not safe_filename or safe_filename != filename or safe_filename in {".", ".."}:
+            raise ValueError("Invalid password or corrupted image")
+        output_path = os.path.join(output_dir, safe_filename)
         with open(output_path, "wb") as f:
             f.write(data)
         return output_path

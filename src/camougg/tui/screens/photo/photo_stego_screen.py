@@ -226,7 +226,7 @@ class PhotoStegoScreen(Screen):
             cli_input.disabled = False
             cli_input.display = True
             cli_input.focus()
-            log.write("[bold yellow]? Enter custom output path (with file name, .png):[/]")
+            log.write("[bold yellow]? Enter custom output path (with file name & extension):[/]")
             self.current_step = "custom_output_path"
         else:
             log.write("[bold yellow]? Pick the output directory...[/]")

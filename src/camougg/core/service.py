@@ -15,17 +15,24 @@ class Service:
 
     def embed_file(self, cover_img_path, payload_path, password, output_path):
         data, filename = self.payload_io.read_payload(payload_path)
-        extension = os.path.splitext(cover_img_path)[1].lower()
+        cover_extension = os.path.splitext(cover_img_path)[1].lower()
+        output_extension = os.path.splitext(output_path)[1].lower()
 
-        if extension in (".jpg", ".jpeg"):
+        if cover_extension in (".jpg", ".jpeg"):
+            if output_extension not in (".jpg", ".jpeg"):
+                raise ValueError(f"Output path must end in .jpg/.jpeg for a JPEG cover image, got: {output_path}")
             jpeg = self.jpeg_handler.load(cover_img_path)
             modified_Y = self.steganography.steg_write_dct(jpeg.Y, password, data, filename)
             jpeg.Y = modified_Y
             self.jpeg_handler.save(jpeg, output_path)
-        else:
+        elif cover_extension == ".png":
+            if output_extension != ".png":
+                raise ValueError(f"Output path must end in .png for a PNG cover image, got: {output_path}")
             flat_pixels, original_shape = self.png_handler.load(cover_img_path)
             modified = self.steganography.steg_write(flat_pixels, password, data, filename)
             self.png_handler.save(modified, original_shape, output_path)
+        else:
+            raise ValueError(f"Unsupported cover image format: {cover_extension}")
 
     def extract_file(self, img_path, password, output_dir):
         extension = os.path.splitext(img_path)[1].lower()

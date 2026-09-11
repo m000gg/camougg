@@ -77,6 +77,8 @@ class Steganography:
         if not data:
             raise ValueError("Message cannot be empty")
 
+        if ">" in filename:
+            raise ValueError("Filename cannot contain '>'")
         header = "<{}|{}>".format(len(data), filename)
         num_pixels= flat_pixels.shape[0]
         header_bytes = header.encode("utf-8")
@@ -146,6 +148,8 @@ class Steganography:
         if len(usable_positions) < 128:
             raise ValueError("Image is too small to hide your message.")
 
+        if ">" in filename:
+            raise ValueError("Filename cannot contain '>'")
         header = "<{}|{}>".format(len(data), filename)
         header_bytes = header.encode("utf-8")
         full_payload = header_bytes + data # bytes
@@ -218,7 +222,7 @@ class Steganography:
 
             salt_bits = []
             for coordinate in salt_positions: # coordinate = (block_row, block_column, row_in_block, column_in_block)
-                coef = abs(Y[*coordinate])
+                coef = abs(Y[coordinate])
                 if coef % 2 == 0:
                     salt_bits.append(0)
                 else:
