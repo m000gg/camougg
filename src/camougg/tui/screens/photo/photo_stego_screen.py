@@ -5,7 +5,8 @@ from textual.app import ComposeResult
 from textual.widgets import Header, Footer, Input, RichLog, Static, Button
 from textual.containers import Vertical, Container, Horizontal
 import os
-from camougg.core.camougg_engine import CamouggEngine
+from camougg.core.service import Service
+from camougg.tui.screens.other.file_picker_screen import FilePickerScreen
 
 SERIOUS_ASCII_LOGO = """
  ██████╗ █████╗ ███╗   ███╗ ██████╗ ██╗   ██╗ ██████╗  ██████╗
@@ -23,9 +24,11 @@ WELCOME_MESSAGE = f"[green]{SERIOUS_ASCII_LOGO}[/]"
 
 class PhotoStegoScreen(Screen):
     saved_image_path = ""
-    saved_secret_text = ""
+    saved_payload_path = ""
     saved_password = ""
     output_image_path = ""
+    output_dir = ""
+    mode = ""  # "write" or "read"
 
     CSS_PATH = "photo-stego-screen.tcss"
 
@@ -46,16 +49,15 @@ class PhotoStegoScreen(Screen):
             Static(WELCOME_MESSAGE, id="logo"),
             Static("Steganography", classes="section_title"),
 
-            # Mode selection with buttons
             Container(
                 Horizontal(
                     Button("Write", id="mode_write", classes="menu_button write"),
-                    Static("Hide secret in image", classes="menu_desc"),
+                    Static("Hide a file in image", classes="menu_desc"),
                     classes="menu_row"
                 ),
                 Horizontal(
                     Button("Read", id="mode_read", classes="menu_button read"),
-                    Static("Extract secret from image", classes="menu_desc"),
+                    Static("Extract a file from image", classes="menu_desc"),
                     classes="menu_row"
                 ),
                 id="mode_buttons_container"
@@ -91,6 +93,8 @@ class PhotoStegoScreen(Screen):
         yield Footer()
 
     def on_mount(self) -> None:
+        self.service = Service()
+
         cli_input = self.query_one("#cli_input")
         cli_input.disabled = True
         cli_input.display = False
@@ -106,18 +110,18 @@ class PhotoStegoScreen(Screen):
             return
 
         log = self.query_one("#echo_log")
-        cli_input = self.query_one("#cli_input")
 
+        self.mode = "write"
         self.query_one("#mode_buttons_container").add_class("hidden")
 
-        log.write(f"\n[bold green]✓ Mode:[/] Write (Hide secret)")
+        log.write(f"\n[bold green]✓ Mode:[/] Write (Hide file)")
         self.current_step = "image_path"
 
-        cli_input.disabled = False
-        cli_input.display = True
-        cli_input.focus()
-
-        log.write("\n[bold yellow]? Input image Path (image_path):[/]")
+        log.write("\n[bold yellow]? Pick a cover image...[/]")
+        self.app.push_screen(
+            FilePickerScreen(mode="file", title="Select cover image"),
+            self.on_image_path_picked,
+        )
 
     @on(Button.Pressed, "#mode_read")
     def handle_read_mode(self):
@@ -125,83 +129,160 @@ class PhotoStegoScreen(Screen):
             return
 
         log = self.query_one("#echo_log")
+        self.mode = "read"
         self.query_one("#mode_buttons_container").add_class("hidden")
 
-        log.write(f"\n[bold green]✓ Mode:[/] Read (Extract secret)")
+        log.write(f"\n[bold green]✓ Mode:[/] Read (Extract file)")
         log.write("[bold cyan]ℹ Read mode activated.[/]")
+        log.write("\n[bold yellow]? Pick the stego image to read from...[/]")
 
+        self.current_step = "read_image_path"
+        self.app.push_screen(
+            FilePickerScreen(mode="file", title="Select stego image"),
+            self.on_read_image_path_picked,
+        )
+
+    def on_image_path_picked(self, path: str | None) -> None:
+        log = self.query_one("#echo_log")
+
+        if path is None:
+            log.write("[bold red]✗ Cancelled.[/] Press r to start over.")
+            return
+
+        self.saved_image_path = path
+        log.write(f"[bold green]✓ Cover image:[/] {self.saved_image_path}")
+
+        self.current_step = "payload_path"
+        log.write("\n[bold yellow]? Pick the file you want to hide...[/]")
+        self.app.push_screen(
+            FilePickerScreen(mode="file", title="Select file to hide"),
+            self.on_payload_path_picked,
+        )
+
+    def on_payload_path_picked(self, path: str | None) -> None:
+        log = self.query_one("#echo_log")
+
+        if path is None:
+            log.write("[bold red]✗ Cancelled.[/] Press r to start over.")
+            return
+
+        self.saved_payload_path = path
+        log.write(f"[bold green]✓ File to hide:[/] {self.saved_payload_path}")
+
+        self.current_step = "password"
         cli_input = self.query_one("#cli_input")
         cli_input.disabled = False
         cli_input.display = True
+        cli_input.password = True
         cli_input.focus()
-        self.current_step = "read_image_path"
-        log.write("\n[bold yellow]? Enter path of the image to read from:[/]")
+        log.write("\n[bold yellow]? Write your password for encryption:[/]")
+
+    def on_read_image_path_picked(self, path: str | None) -> None:
+        log = self.query_one("#echo_log")
+
+        if path is None:
+            log.write("[bold red]✗ Cancelled.[/] Press r to start over.")
+            return
+
+        self.saved_image_path = path
+        log.write(f"[bold green]✓ Stego image:[/] {self.saved_image_path}")
+
+        self.current_step = "read_password"
+        cli_input = self.query_one("#cli_input")
+        cli_input.disabled = False
+        cli_input.display = True
+        cli_input.password = True
+        cli_input.focus()
+        log.write("\n[bold yellow]? Write the password for decryption:[/]")
+
+    def on_output_dir_picked(self, path: str | None) -> None:
+        log = self.query_one("#echo_log")
+        output_container = self.query_one("#output_path_container")
+        output_container.add_class("hidden")
+
+        if path is None:
+            log.write("[bold red]✗ Cancelled.[/] Press r to start over.")
+            return
+
+        self.output_dir = path
+        log.write(f"[bold green]✓ Custom output directory saved:[/] {self.output_dir}")
+
+        self.current_step = "read_ready"
+        self.extract_file(self.saved_image_path, self.saved_password, self.output_dir)
+
 
     @on(Button.Pressed, "#path_other")
     def handle_path_other(self):
-        if self.current_step != "set_directory":
+        if self.current_step not in ("set_directory", "read_set_directory"):
             return
 
         log = self.query_one("#echo_log")
-        cli_input = self.query_one("#cli_input")
 
         self.query_one("#output_path_container").add_class("hidden")
-
         log.write(f"\n[bold green]✓ Choice:[/] Other Directory")
-        log.write("[bold yellow]? Enter custom output path (with file name):[/]")
 
-        cli_input.disabled = False
-        cli_input.display = True
-        cli_input.focus()
-
-        self.current_step = "custom_output_path"
+        if self.current_step == "set_directory":
+            cli_input = self.query_one("#cli_input")
+            cli_input.disabled = False
+            cli_input.display = True
+            cli_input.focus()
+            log.write("[bold yellow]? Enter custom output path (with file name & extension):[/]")
+            self.current_step = "custom_output_path"
+        else:
+            log.write("[bold yellow]? Pick the output directory...[/]")
+            self.app.push_screen(
+                FilePickerScreen(mode="directory", title="Select output directory"),
+                self.on_output_dir_picked,
+            )
 
     @on(Button.Pressed, "#path_same")
     def handle_path_same(self):
-        if self.current_step != "set_directory":
+        if self.current_step not in ("set_directory", "read_set_directory"):
             return
 
         log = self.query_one("#echo_log")
-        cli_input = self.query_one("#cli_input")
 
-        self.output_image_path = "same"
-        log.write(f"\n[bold green]✓ Choice:[/] Same Directory")
-        log.write("[bold green]✓ Using default output path.[/]")
-
-        self.current_step = "ready"
-        cli_input.disabled = True
-        cli_input.display = False
         self.query_one("#output_path_container").add_class("hidden")
+        log.write(f"\n[bold green]✓ Choice:[/] Same Directory")
 
-        self.encrypt_message(self.saved_image_path, self.saved_secret_text, self.saved_password,
-                             self.output_image_path)
+        if self.current_step == "set_directory":
+            base, ext = os.path.splitext(os.path.basename(self.saved_image_path))
+            self.output_image_path = os.path.join(
+                os.path.dirname(self.saved_image_path) or ".", f"{base}_stego{ext}"
+            )
+            log.write(f"[bold green]✓ Using default output path:[/] {self.output_image_path}")
+            self.current_step = "ready"
+            self.embed_file(self.saved_image_path, self.saved_payload_path,
+                             self.saved_password, self.output_image_path)
+        else:
+            self.output_dir = os.path.dirname(self.saved_image_path) or "."
+            log.write(f"[bold green]✓ Using default output directory:[/] {self.output_dir}")
+            self.current_step = "read_ready"
+            self.extract_file(self.saved_image_path, self.saved_password, self.output_dir)
+
 
     @work(thread=True)
-    def encrypt_message(self, image_path: str, secret: str, password: str, output_image_path: str) -> None:
+    def embed_file(self, image_path: str, payload_path: str, password: str, output_image_path: str) -> None:
         log_widget = self.query_one("#echo_log")
-
-        engine = CamouggEngine(log_callback=log_widget.write, app=self)
+        log_widget.write("[bold cyan]⟳ Embedding...[/]")
 
         try:
-            engine.embed(image_path, secret, password, output_image_path)
+            self.service.embed_file(image_path, payload_path, password, output_image_path)
+            log_widget.write(f"[bold green]✓ Done! Saved to:[/] {output_image_path}")
             log_widget.write("Ready! press m to go to main menu or q to quit.")
         except Exception as e:
             self.app.notify(f"Error: {str(e)}", severity="error")
             log_widget.write(f"[bold red]✗ Error: {str(e)}[/]")
 
     @work(thread=True)
-    def decrypt_message(self, image_path: str, password: str):
+    def extract_file(self, image_path: str, password: str, output_dir: str) -> None:
         log_widget = self.query_one("#echo_log")
-
-        engine = CamouggEngine(log_callback=log_widget.write, app=self)
+        log_widget.write("[bold cyan]⟳ Extracting...[/]")
 
         try:
-            secret = engine.extract(image_path, password)
-            if secret is not None:
-                log_widget.write(f"Your secret message is: [bold red] {secret} [/]" )
-                log_widget.write("Ready! press m to go to main menu or q to quit.")
-            else:
-                log_widget.write("[bold red]✗ Failed to decrypt message[/]")
+            saved_path = self.service.extract_file(image_path, password, output_dir)
+            log_widget.write(f"[bold green]✓ Extracted file saved to:[/] {saved_path}")
+            log_widget.write("Ready! press m to go to main menu or q to quit.")
         except Exception as e:
             self.app.notify(f"Error: {str(e)}", severity="error")
             log_widget.write(f"[bold red]✗ Error: {str(e)}[/]")
@@ -216,27 +297,7 @@ class PhotoStegoScreen(Screen):
 
         log = self.query_one("#echo_log")
 
-        if self.current_step == "image_path":
-            if not os.path.isfile(user_input):
-                log.write(f"[bold red]✗ Error:[/] File '{user_input}' not found.")
-                log.write("[bold yellow]? Try enter the path once again:[/]")
-                return
-
-            self.saved_image_path = user_input
-            log.write(f"[bold green]✓ Found file, path saved:[/] {self.saved_image_path}")
-
-            self.current_step = "secret_text"
-            log.write("\n[bold yellow]? Write your secret:[/]")
-
-        elif self.current_step == "secret_text":
-            self.saved_secret_text = user_input
-            log.write(f"[bold green]✓ Secret text saved[/]")
-
-            self.current_step = "password"
-            log.write("\n[bold yellow]? Write your password for encryption:[/]")
-            event.input.password = True
-
-        elif self.current_step == "password":
+        if self.current_step == "password":
             self.saved_password = user_input
             log.write(f"[bold green]✓ Password set[/]")
             event.input.password = False
@@ -259,31 +320,25 @@ class PhotoStegoScreen(Screen):
             self.current_step = "ready"
             event.input.disabled = True
             event.input.display = False
-            self.query_one("#output_path_container").add_class("hidden")
 
-            self.encrypt_message(self.saved_image_path, self.saved_secret_text, self.saved_password,
-                                 self.output_image_path)
-
-        elif self.current_step == "read_image_path":
-            if not os.path.isfile(user_input):
-                log.write(f"[bold red]✗ Error:[/] File '{user_input}' not found.")
-                log.write("[bold yellow]? Try enter the path once again:[/]")
-                return
-
-            self.saved_image_path = user_input
-            log.write(f"[bold green]✓ Found file, path saved:[/] {self.saved_image_path}")
-            self.current_step = "read_password"
-            log.write("\n[bold yellow]? Write the password for decryption:[/]")
-            event.input.password = True
+            self.embed_file(self.saved_image_path, self.saved_payload_path,
+                             self.saved_password, self.output_image_path)
 
         elif self.current_step == "read_password":
             self.saved_password = user_input
             log.write(f"[bold green]✓ Password set[/]")
             event.input.password = False
-            self.current_step = "read_ready"
+
+            self.current_step = "read_set_directory"
+
+            output_container = self.query_one("#output_path_container")
+            output_container.remove_class("hidden")
+            self.query_one("#path_other").focus()
+
+            log.write("\n[bold yellow]? Choose where to save the extracted file:[/]")
             event.input.disabled = True
             event.input.display = False
-            self.decrypt_message(self.saved_image_path, self.saved_password)
+
 
     def action_quit(self) -> None:
         self.app.exit()
@@ -293,9 +348,11 @@ class PhotoStegoScreen(Screen):
 
     def action_reset(self) -> None:
         self.saved_image_path = ""
-        self.saved_secret_text = ""
+        self.saved_payload_path = ""
         self.saved_password = ""
         self.output_image_path = ""
+        self.output_dir = ""
+        self.mode = ""
 
         self.current_step = "mode_select"
         log = self.query_one("#echo_log")

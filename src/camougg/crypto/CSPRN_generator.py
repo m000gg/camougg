@@ -3,14 +3,13 @@ import hashlib
 
 class CSPRNGenerator:
     def __init__(self):
-        self.static_salt = b"camougg"
         self.nonce = b'1234567890123456'
 
-    def hash_password(self, password, num_pixels):
+    def hash_password(self, password, num_pixels, salt):
         pixel_indices = [i for i in range(num_pixels)]
         password = password.encode("utf-8")
 
-        key = hashlib.scrypt(password, salt=self.static_salt, n=16384, r=8, p=1, dklen=32)
+        key = hashlib.scrypt(password, salt=salt, n=16384, r=8, p=1, dklen=32)
 
         cipher = Cipher(algorithms.ChaCha20(key, self.nonce), mode=None)
         encryptor = cipher.encryptor()
